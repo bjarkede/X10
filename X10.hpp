@@ -3,7 +3,8 @@
 #include "X10const.hpp"
 
 #include <iostream>
-#include <deque> 
+#include <deque>
+#include <cassert>
 
 // X10 States
 enum state { IDLE = 0, SENDING = 1, RECEIVING = 2 };
@@ -12,13 +13,16 @@ struct X10_Code  {
   std::deque<char unsigned> packet;
   X10_Code(char unsigned house_code, char unsigned number_code)
   {
-    packet.push_back(START_CODE);
-    packet.push_back(house_code);
-    packet.push_back(number_code);
+    // We push it two times, because we need to send it twice.
+    for(int i = 0; i < 2; ++i) {
+      packet.push_back(START_CODE);
+      packet.push_back(house_code);
+      packet.push_back(number_code);
+    }
   }
 };
 
-struct X10_Interface {
+struct X10_Controller {
 private:
   int transmission_pin;
   int receiving_pin;
@@ -26,7 +30,7 @@ private:
   state X10_state; 
 protected:
 public:
-  X10_Interface() { X10_state = IDLE;}
+  X10_Controller() { X10_state = IDLE;}
   
   void transmit_code(X10_Code* code);
   X10_Code receive_code();
@@ -37,7 +41,7 @@ public:
   bool wait_for_zero_crossing_point();
 
   // Garbage
-  state get_state(X10_Interface* interface) {
+  state get_state(X10_Controller* controller) {
     return this->X10_state;
   }
   void set_state(state new_state) {
