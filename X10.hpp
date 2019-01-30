@@ -29,6 +29,7 @@ public:
   X10_Interface() { X10_state = IDLE;}
   
   void transmit_code(X10_Code* code);
+  X10_Code receive_code();
   
   // @Incomplete
   // Since X10 transmissions are synchronized to the zero crossing point of the AC power line

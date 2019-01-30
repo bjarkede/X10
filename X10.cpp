@@ -20,6 +20,16 @@ void X10_Interface::transmit_code(X10_Code* code) {
   }
 }
 
+X10_Code X10_Interface::receive_code() {
+  // @Incomplete:
+  // We wan't to listen to the X10 network, and wait for a start-code
+  // while we are idle.. if our house_code and number_code is sent,
+  // we act on the information sent. -bjarke, 30th January 2019.
+  if(this->X10_state == RECEIVING) {
+
+  }
+}
+
 bool X10_Interface::wait_for_zero_crossing_point() {
 
 }
