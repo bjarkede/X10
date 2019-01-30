@@ -2,7 +2,7 @@
 
 void X10_Interface::transmit_code(X10_Code* code) {
   if(this->get_state(this) == RECEIVING) {
-    std::cout << "Tried receiving code when sending.." << std::endl;
+    std::cout << "Tried sending code when receiving.." << std::endl;
     return;
   }
   
