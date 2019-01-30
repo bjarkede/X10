@@ -40,6 +40,9 @@ public:
   state get_state(X10_Interface* interface) {
     return this->X10_state;
   }
+  void set_state(state new_state) {
+    this->X10_state = new_state;
+  }
 };
 
 int amount_of_bits(unsigned char n) {
