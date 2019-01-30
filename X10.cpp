@@ -35,11 +35,7 @@ void X10_Controller::transmit_code(X10_Code* code) {
      
     code->packet.pop_front(); // Move onto the next instruction
   }
-
-
-  // @Incomplete:
-  // We only transmit the code onces, we need to make it two times some way. -bjarke, 30th January 2019.
-  
+ 
   // We finished transmitting
   this->set_state(IDLE);
   return;
