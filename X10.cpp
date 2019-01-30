@@ -11,11 +11,9 @@ void X10_Interface::transmit_code(X10_Code* code) {
     // @Speed:
     // We could make the code into an array of characters and iterate.
     // -bjarke, 30th January 2019.
+    unsigned char bit;
     for(int i = 0; i <= amount_of_bits(code->packet.front()); ++i) {
-      // 1. Step: Wait for crossing.
-      // 2. Step: Get the bit, and send the first manchester encoded version.
-      // 3. Step: Wait for crossing.
-      // 4. Step: Send the second part of the manchester encoded version.
+      bit = (code->packet.front() & (1 << amount_of_bits(code->packet.front())));
     }
 
     code->packet.pop_front(); // Move onto the next instruction
