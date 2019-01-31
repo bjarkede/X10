@@ -23,8 +23,8 @@ void X10_Controller::transmit_code(X10_Code* code) {
       if(code->packet.front() == BRIGHT && code->packet.front() == DIM) { continous_flag = true; }
       current_bit = (code->packet.front() & (1 << amount_of_bits(code->packet.front())));
       current_bit_complement = ~current_bit;
-
       // Send the bits to the interrupt routine.
+     
     }
 
     code->packet.pop_front(); // Move onto the next instruction
@@ -47,6 +47,7 @@ X10_Code* X10_Controller::receive_code() {
 
   // Temp
   X10_Code* result = new X10_Code(HOUSE_A, ON);
+
   this->set_state(IDLE);
   return result;
 }
