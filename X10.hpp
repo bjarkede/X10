@@ -4,6 +4,7 @@
 
 #include <iostream>
 #include <deque>
+#include <tuple>
 #include <cassert>
 
 // X10 States
@@ -34,12 +35,9 @@ public:
   
   void transmit_code(X10_Code* code);
   X10_Code* receive_code();
-  
-  // @Incomplete
-  // Since X10 transmissions are synchronized to the zero crossing point of the AC power line
-  // we want to be able to see if we hit it, so we can transmit. -bjarke, 29th January 2019
-  bool wait_for_zero_crossing_point();
 
+  void wait_for_zero_crossing();
+ 
   // Garbage
   state get_state(X10_Controller* controller) {
     return this->X10_state;
