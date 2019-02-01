@@ -1,5 +1,7 @@
 #include "X10.hpp"
 
+std::deque<char unsigned> encoded_packet;
+
 void X10_Controller::transmit_code(X10_Code* code) {
   assert(this->X10_state == IDLE);
   this->set_state(SENDING);
@@ -10,15 +12,9 @@ void X10_Controller::transmit_code(X10_Code* code) {
       // A code packet should be followed by 3 power line cycles between each group.
       // If it isn't a BRIGHT or DIM command.
       for(int i = 0; i < 6; ++i) {
-	this->add_encoded_bit_to_packet(0);
+	encoded_packet.push_back(0);
       }
     }
-    
-    // @Incomplete
-    // For each binary code in our data packet: We want to shift off each bit,
-    // and send out the corresponding manchester encoded bit.. What this means is that
-    // for each sine wave, we want to send the bit and its complement on the zero crossing point.
-    // I.E: 0110 -> 0&1 then 1&0 1&0 0&1, for a total of 8 bits. -bjarke, 29th January 2019.
 
     unsigned char current_bit;
     unsigned char current_bit_complement;
@@ -27,16 +23,22 @@ void X10_Controller::transmit_code(X10_Code* code) {
       current_bit = (code->packet.front() & (1 << amount_of_bits(code->packet.front())));
       current_bit_complement = ~current_bit;
 
-      // @Cleanup
-      this->add_encoded_bit_to_packet(current_bit);
-      this->add_encoded_bit_to_packet(current_bit_complement);
+      // Send the bits to the external interrupt routine.
+      encoded_packet.push_back(current_bit);
+      encoded_packet.push_back(current_bit_complement);
     }
 
     code->packet.pop_front(); // Move onto the next instruction
   }
 
+  // @Incomplete:
   // Start the external interrupt now that we have parsed the bits.
 
+  // Then wait until the global packet is empty...
+  while(!encoded_packet.empty()) {
+    // Do nothing.
+  }
+  
   // We finished transmitting
   this->set_state(IDLE);
   return;
@@ -79,14 +81,14 @@ int main(int argc, char* argv[]) {
 // When we cross 0 on the AC power line, we do an external interrupt. 
 // Then we send a bit for 1ms, at 120kHz. -bjarke, 1st Febuary 2019.
 ISR(INT0_vect) {
-  auto packet = get_encoded_packet();
-  if(!packet.empty()) {
-    current_bit = packet.front();
+  if(!encoded_packet.empty()) {
+    current_bit = encoded_packet.front();
 
+    // @Incomplete:
     // Transmit the bit for 1 ms.
     
     // On the next interrupt, transmit the next bit, by removing this one.
-    packet.pop_front();
+    encoded_packet.pop_front();
   }
 }
 

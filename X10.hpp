@@ -29,8 +29,6 @@ private:
   int transmission_pin;
   int receiving_pin;
   int interrupt_pin;
-
-  std::deque<char unsigned> encoded_packet;
   
   state X10_state; 
 protected:
@@ -48,8 +46,6 @@ public:
     this->X10_state = new_state;
   }
 
-  void add_encoded_bit_to_packet(char unsigned bit) { this->encoded_packet.push_back(bit); }
-  std::deque<char unsigned> get_encoded__packet();
 };
 
 int amount_of_bits(unsigned char n) {
