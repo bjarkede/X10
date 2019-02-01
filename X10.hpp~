@@ -6,7 +6,7 @@
 #include <deque>
 #include <cassert>
 
-#include <avr/interrupt.h>
+//#include <avr/interrupt.h>
 
 // X10 States
 enum state { IDLE = 0, SENDING = 1, RECEIVING = 2 };

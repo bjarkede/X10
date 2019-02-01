@@ -14,7 +14,7 @@ void X10_Controller::transmit_code(X10_Code* code) {
     if(!continous_flag && code->packet.size() == 3) {
       // A code packet should be followed by 3 power line cycles between each group.
       // If it isn't a BRIGHT or DIM command.
-      for(int i = 0; i < 9; ++i) {
+      for(int i = 0; i < 6; ++i) {
 	encoded_packet.push_back(0x0);
       }
     }
@@ -39,6 +39,8 @@ void X10_Controller::transmit_code(X10_Code* code) {
   // Then wait until the global packet is empty...
   while(!encoded_packet.empty()) {
     // Do nothing.
+    std::cout << (int)encoded_packet.front() << std::endl;
+    encoded_packet.pop_front();
   }
   
   // We finished transmitting
@@ -66,7 +68,7 @@ X10_Code* X10_Controller::receive_code() {
 // Used for debugging...
 int main(int argc, char* argv[]) {
   
-  X10_Code* code = new X10_Code(HOUSE_A, KEY_2);
+  X10_Code* code = new X10_Code(HOUSE_A, ON);
   X10_Controller* controller = new X10_Controller();
 
   std::cout << "Encoding our X10_code to: " << std::endl;
@@ -74,6 +76,7 @@ int main(int argc, char* argv[]) {
 
   return 0;
 }
+
 
 // @TODO
 // When we cross 0 on the AC power line, we do an external interrupt. 
@@ -89,4 +92,5 @@ ISR(INT0_vect) {
     encoded_packet.pop_front();
   }
 }
+
 
