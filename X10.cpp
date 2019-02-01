@@ -39,8 +39,6 @@ void X10_Controller::transmit_code(X10_Code* code) {
   // Then wait until the global packet is empty...
   while(!encoded_packet.empty()) {
     // Do nothing.
-    std::cout << (int)encoded_packet.front() << std::endl;
-    encoded_packet.pop_front();
   }
   
   // We finished transmitting
