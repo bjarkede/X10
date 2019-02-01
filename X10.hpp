@@ -4,7 +4,6 @@
 
 #include <iostream>
 #include <deque>
-#include <tuple>
 #include <cassert>
 
 #include <avr/interrupt.h>
