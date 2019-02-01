@@ -9,6 +9,8 @@ void X10_Controller::transmit_code(X10_Code* code) {
   unsigned char current_bit;
   unsigned char current_bit_complement;
 
+  //std::cout << code->packet.size() << std::endl;
+
   bool continous_flag = false;
   while(!code->packet.empty()) {
     if(!continous_flag && code->packet.size() == 3) {
@@ -19,18 +21,20 @@ void X10_Controller::transmit_code(X10_Code* code) {
       }
     }
 
-    for(int i = 0; i < amount_of_bits(code->packet.size()); ++i) { 
+
+    for(int i = 0; i < amount_of_bits(code->packet.front()); ++i) { 
       if(code->packet.front() == BRIGHT || code->packet.front() == DIM) { continous_flag = true; }
       
-      current_bit = (code->packet.front() & (1 << i)) != 0;
-      current_bit_complement = current_bit^1;
+      current_bit = (code->packet.front() & (1 >> amount_of_bits(code->packet.front())));
+      current_bit_complement = ~current_bit;
       
       //Send the bits to the external interrupt routine.
-      std::cout << (int)current_bit << std::endl;
       encoded_packet.push_back(current_bit);
       encoded_packet.push_back(current_bit_complement);
     }
 
+    std::cout << amount_of_bits(code->packet.front()) << std::endl;
+    //std::cout << (int)code->packet.front() << std::endl;
     code->packet.pop_front(); // Move onto the next instruction
   }
 
@@ -69,7 +73,7 @@ X10_Code* X10_Controller::receive_code() {
 // Used for debugging...
 int main(int argc, char* argv[]) {
   
-  X10_Code* code = new X10_Code(HOUSE_A, KEY_2);
+  X10_Code* code = new X10_Code(HOUSE_A, ON);
   X10_Controller* controller = new X10_Controller();
 
   std::cout << "Encoding our X10_code to: " << std::endl;
