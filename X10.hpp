@@ -6,7 +6,14 @@
 #include <deque>
 #include <cassert>
 
+#include <avr/io.h>
 #include <avr/interrupt.h>
+
+#define SET_TIMER0_WAVEFORM TCCR0A |= (1<<WGM01)
+#define SET_TIMER0_PRESCALE TCCR0B |= (1<<CS00)
+#define SET_TIMER0_MASK TIMSK0 |= (1<<OCIE0A)
+#define START_TIMER0 TCCR0B |= (1<<CS00)
+#define STOP_TIMER0 TCCR0B &= 0B11111110
 
 // X10 States
 enum state { IDLE = 0, SENDING = 1, RECEIVING = 2 };
@@ -26,7 +33,6 @@ struct X10_Code  {
 
 struct X10_Controller {
 private:
-  int transmission_pin;
   int receiving_pin;
   int interrupt_pin;
   
@@ -39,7 +45,7 @@ public:
   X10_Code* receive_code();
  
   // Garbage
-  state get_state(X10_Controller* controller) {
+  state get_state(X10_Controller* controller) const {
     return this->X10_state;
   }
   void set_state(state new_state) {
@@ -47,6 +53,18 @@ public:
   }
 
 };
+
+// @Incomplete:
+// We need to specify the output pin for the signal.
+void TIMER0_init() {
+  SET_TIMER0_WAVEFORM;
+  SET_TIMER0_MASK;
+  SET_TIMER0_PRESCALE;
+  OCR0A = 65; // See documentation for this value...
+
+  sei();
+  return;
+}
 
 // @Hack:
 // We know the order in which our START/HOUSE 4 long, and NUMBER/FUNCTION 5 long

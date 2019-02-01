@@ -6,10 +6,8 @@ void X10_Controller::transmit_code(X10_Code* code) {
   assert(this->X10_state == IDLE);
   this->set_state(SENDING);
 
-  unsigned char current_bit;
-  unsigned char current_bit_complement;
-
   bool continous_flag = false;
+
   while(!code->packet.empty()) {
     if(!continous_flag && code->packet.size() == 3) {
       // A code packet should be followed by 3 power line cycles between each group.
@@ -20,27 +18,24 @@ void X10_Controller::transmit_code(X10_Code* code) {
     }
 
     for(int i = 0; i < amount_of_bits(code->packet.size()); ++i) { 
-      if(code->packet.front() == BRIGHT || code->packet.front() == DIM) { continous_flag = true; }
+      if(code->packet.front() == BRIGHT || code->packet.front() == DIM)	{ continous_flag = true; }
       
-      current_bit = (code->packet.front() & (1 << i)) != 0;
-      current_bit_complement = current_bit^1;
-      
-      //Send the bits to the external interrupt routine.
-      encoded_packet.push_back(current_bit);
-      encoded_packet.push_back(current_bit_complement);
+      // Send the front bit and its complement to the external interrupt routine.
+      encoded_packet.push_back((code->packet.front() & (1 << i)) != 0);
+      encoded_packet.push_back(current_bit^1);
     }
 
     code->packet.pop_front(); // Move onto the next instruction
   }
 
   // @Incomplete:
-  // Start the external interrupt now that we have parsed the bits.
-
+  // Start the external interrupt/TIMER0 now that we have parsed the bits.
+  
   // Then wait until the global packet is empty...
   while(!encoded_packet.empty()) {
     // Do nothing.
   }
-  
+
   // We finished transmitting
   this->set_state(IDLE);
   return;
@@ -75,7 +70,6 @@ int main(int argc, char* argv[]) {
   return 0;
 }
 
-
 // @TODO
 // When we cross 0 on the AC power line, we do an external interrupt. 
 // Then we send a bit for 1ms, at 120kHz. -bjarke, 1st Febuary 2019.
@@ -85,10 +79,17 @@ ISR(INT0_vect) {
 
     // @Incomplete:
     // Transmit the bit for 1 ms.
+    START_TIMER0;
     
     // On the next interrupt, transmit the next bit, by removing this one.
     encoded_packet.pop_front();
   }
+}
+
+ISR(TIMER0_COMPA_vect) {
+  // @Incomplete:
+  // We need to send out HIGH on some port, then disable the timer and send low untill
+  // the next zero crossing point. -bjarke, 1st Febuary 2019.
 }
 
 
