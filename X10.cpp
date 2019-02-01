@@ -59,7 +59,7 @@ X10_Code* X10_Controller::receive_code() {
   return result;
 }
 
-std::deque<std::tuple<char unsigned, char unsigned> > X10_Controller::get_encoded_packet() {
+std::deque<char unsigned> X10_Controller::get_encoded_packet() {
   return this->encoded_packet;
 }
 
