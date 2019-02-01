@@ -3,12 +3,15 @@
 void X10_Controller::transmit_code(X10_Code* code) {
   assert(this->X10_state == IDLE);
   this->set_state(SENDING);
-  
+
   bool continous_flag = false;
   while(!code->packet.empty()) {
     if(!continous_flag && code->packet.size() == 3) {
       // A code packet should be followed by 3 power line cycles between each group.
       // If it isn't a BRIGHT or DIM command.
+      for(int i = 0; i < 6; ++i) {
+	this->add_encoded_bit_to_packet(0);
+      }
     }
     
     // @Incomplete
@@ -23,21 +26,20 @@ void X10_Controller::transmit_code(X10_Code* code) {
       if(code->packet.front() == BRIGHT || code->packet.front() == DIM) { continous_flag = true; }
       current_bit = (code->packet.front() & (1 << amount_of_bits(code->packet.front())));
       current_bit_complement = ~current_bit;
-      // Send the bits to the interrupt routine.
+
+      // @Cleanup
+      this->add_encoded_bit_to_packet(current_bit);
+      this->add_encoded_bit_to_packet(current_bit_complement);
     }
 
     code->packet.pop_front(); // Move onto the next instruction
   }
 
+  // Start the external interrupt now that we have parsed the bits.
+
   // We finished transmitting
   this->set_state(IDLE);
   return;
-}
-
-void X10_Controller::wait_for_zero_crossing() {
-  // @Incomplete:
-  // We need to send this tuple to the ISR routine, so we can send it out at 120kHz.
-  // -bjarke, 31th January 2019.
 }
 
 X10_Code* X10_Controller::receive_code() {
@@ -52,9 +54,13 @@ X10_Code* X10_Controller::receive_code() {
 
   // Temp
   X10_Code* result = new X10_Code(HOUSE_A, OFF);
-
+  
   this->set_state(IDLE);
   return result;
+}
+
+std::deque<std::tuple<char unsigned, char unsigned> > X10_Controller::get_encoded_packet() {
+  return this->encoded_packet;
 }
 
 // Used for debugging...
@@ -67,5 +73,20 @@ int main(int argc, char* argv[]) {
   controller->transmit_code(code1);
 
   return 0;
+}
+
+// @TODO
+// When we cross 0 on the AC power line, we do an external interrupt. 
+// Then we send a bit for 1ms, at 120kHz. -bjarke, 1st Febuary 2019.
+ISR(INT0_vect) {
+  auto packet = get_encoded_packet();
+  if(!packet.empty()) {
+    current_bit = packet.front();
+
+    // Transmit the bit for 1 ms.
+    
+    // On the next interrupt, transmit the next bit, by removing this one.
+    packet.pop_front();
+  }
 }
 

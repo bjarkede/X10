@@ -7,6 +7,8 @@
 #include <tuple>
 #include <cassert>
 
+#include <avr/interrupt.h>
+
 // X10 States
 enum state { IDLE = 0, SENDING = 1, RECEIVING = 2 };
 
@@ -27,7 +29,10 @@ struct X10_Controller {
 private:
   int transmission_pin;
   int receiving_pin;
+  int interrupt_pin;
 
+  std::deque<char unsigned> encoded_packet;
+  
   state X10_state; 
 protected:
 public:
@@ -35,8 +40,6 @@ public:
   
   void transmit_code(X10_Code* code);
   X10_Code* receive_code();
-
-  void wait_for_zero_crossing();
  
   // Garbage
   state get_state(X10_Controller* controller) {
@@ -45,6 +48,9 @@ public:
   void set_state(state new_state) {
     this->X10_state = new_state;
   }
+
+  void add_encoded_bit_to_packet(char unsigned bit) { this->encoded_packet.push_back(bit); }
+  std::deque<char unsigned> get_encoded__packet();
 };
 
 int amount_of_bits(unsigned char n) {
