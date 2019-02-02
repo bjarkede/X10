@@ -10,10 +10,13 @@
 #include <avr/interrupt.h>
 
 #define SET_TIMER0_WAVEFORM TCCR0A |= (1<<WGM01)
-#define SET_TIMER0_PRESCALE TCCR0B |= (1<<CS00)
 #define SET_TIMER0_MASK TIMSK0 |= (1<<OCIE0A)
 #define START_TIMER0 TCCR0B |= (1<<CS00)
 #define STOP_TIMER0 TCCR0B &= 0B11111110
+
+#define SET_INT0_SENSE_CONTROL EICRA |= (1<<ISC00)|(1<<ISC01) // Rising edge
+#define START_INT0_INTERRUPT EIMSK |= (1<<INT0)
+#define STOP_INT0_INTERRUPT EIMSK &= 0B11111110
 
 // X10 States
 enum state { IDLE = 0, SENDING = 1, RECEIVING = 2 };
@@ -39,7 +42,7 @@ private:
   state X10_state; 
 protected:
 public:
-  X10_Controller() { X10_state = IDLE;}
+  X10_Controller() { X10_state = IDLE; }
   
   void transmit_code(X10_Code* code);
   X10_Code* receive_code();
@@ -56,13 +59,20 @@ public:
 
 // @Incomplete:
 // We need to specify the output pin for the signal.
+// We don't start the timer yet, because we want to do that exactly when we do
+// the external interrupt on INT0. -bjarke, 2nd Febuary 2019.
 void TIMER0_init() {
   SET_TIMER0_WAVEFORM;
   SET_TIMER0_MASK;
-  SET_TIMER0_PRESCALE;
   OCR0A = 65; // See documentation for this value...
+  
+  return;
+}
 
-  sei();
+void INT0_init() {
+  SET_INT0_SENSE_CONTROL;
+  START_INT0_INTERRUPT;
+  
   return;
 }
 

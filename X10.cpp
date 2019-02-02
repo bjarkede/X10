@@ -7,6 +7,7 @@ void X10_Controller::transmit_code(X10_Code* code) {
   this->set_state(SENDING);
 
   bool continous_flag = false;
+  char unsigned current_bit;
 
   while(!code->packet.empty()) {
     if(!continous_flag && code->packet.size() == 3) {
@@ -19,24 +20,32 @@ void X10_Controller::transmit_code(X10_Code* code) {
 
     for(int i = 0; i < amount_of_bits(code->packet.size()); ++i) { 
       if(code->packet.front() == BRIGHT || code->packet.front() == DIM)	{ continous_flag = true; }
+
+      current_bit = (code->packet.front() & (1 << i)) != 0;
       
-      // Send the front bit and its complement to the external interrupt routine.
-      encoded_packet.push_back((code->packet.front() & (1 << i)) != 0);
+      // Push the front bit and its complement to the external interrupt routine.
+      encoded_packet.push_back(current_bit);
       encoded_packet.push_back(current_bit^1);
     }
 
     code->packet.pop_front(); // Move onto the next instruction
   }
 
-  // @Incomplete:
   // Start the external interrupt/TIMER0 now that we have parsed the bits.
+  INT0_init();
+  TIMER0_init();
+  sei();
   
   // Then wait until the global packet is empty...
   while(!encoded_packet.empty()) {
     // Do nothing.
   }
 
-  // We finished transmitting
+  // We finished transmitting so disable INT0 and TIMER0 
+  STOP_INT0_INTERRUPT;
+  STOP_TIMER0;
+  cli();
+  
   this->set_state(IDLE);
   return;
 }
