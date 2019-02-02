@@ -67,6 +67,20 @@ X10_Code* X10_Controller::receive_code() {
   return result;
 }
 
+// @Incomplete
+// This is the function that runs when out X10_state is IDLE. The function
+// Checks if a START_CODE is sent out on the X10 network. -bjarke, 2nd Febuary 2019.
+bool X10_Controller::idle() {
+  assert(this->X10_state == IDLE);
+  
+  // TODO:
+  // We want to see if we register a start code on our receiving pin.
+  // If we do, we return true so we can call receive_code and start parsing
+  // the data from manchester to our X10_Code scheme. -bjarke 2nd Febuary 2019.
+  
+  return true;
+}
+
 // Used for debugging...
 int main(int argc, char* argv[]) {
   

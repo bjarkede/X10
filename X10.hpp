@@ -46,6 +46,8 @@ public:
   
   void transmit_code(X10_Code* code);
   X10_Code* receive_code();
+
+  bool idle();
  
   // Garbage
   state get_state(X10_Controller* controller) const {
