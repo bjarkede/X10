@@ -22,10 +22,14 @@ void X10_Controller::transmit_code(X10_Code* code) {
       if(code->packet.front() == BRIGHT || code->packet.front() == DIM)	{ continous_flag = true; }
 
       current_bit = (code->packet.front() & (1 << i)) != 0;
-      
-      // Push the front bit and its complement to the external interrupt routine.
-      encoded_packet.push_back(current_bit);
-      encoded_packet.push_back(current_bit^1);
+
+      // We don't encode start codes..
+      if(code->packet.size() == 6 || code->packet.size() == 3) {
+	encoded_packet.push_back(current_bit)
+      } else {
+	encoded_packet.push_back(current_bit);
+	encoded_packet.push_back(current_bit^1);
+      }
     }
 
     code->packet.pop_front(); // Move onto the next instruction
