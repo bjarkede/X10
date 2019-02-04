@@ -18,8 +18,7 @@ int main(int argc, char* argv[]) {
     if(!controller->idle()) {
       X10_Code code = controller->receive_code();
 
-      // Act on the received X10_Code...
-      
+      // Act on the received X10_Code...      
     }
   }
 
