@@ -71,6 +71,14 @@ void TIMER0_init() {
   return;
 }
 
+// @Incomplete:
+// We use TIMER2 to to read data into our global buffer.
+// When the buffer equals the X10_Code scheme start_code,
+// we break, and enter receiving state -bjarke, 5th Febuary 2019.
+void TIMER2_init() {
+
+}
+
 void INT0_init() {
   SET_INT0_SENSE_CONTROL;
   START_INT0_INTERRUPT;
@@ -91,4 +99,4 @@ int amount_of_bits(int n) {
   }
 
   return result;
-};
+}
