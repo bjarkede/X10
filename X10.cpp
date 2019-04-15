@@ -1,6 +1,8 @@
 #include "X10.hpp"
 
-std::deque<char unsigned> encoded_packet;
+std::deque<char unsigned> encoded_packet; // This packet is empty unless we are sending an X10 Command.
+std::deque<char unsigned> lpf_buffer;     // This buffer is loaded with bits received at 120hz.
+std::deque<char unsigned> hpf_buffer;	  // This buffer is loaded with bits received at 220hz.
 
 void X10_Controller::transmit_code(X10_Code* code) {
   assert(this->X10_state == IDLE);
@@ -60,10 +62,14 @@ void X10_Controller::transmit_code(X10_Code* code) {
 X10_Code* X10_Controller::receive_code() {
   assert(this->X10_state == IDLE);
   this->set_state(RECEIVING);
+
+  // Start the external interrupt.
+  INT0_init();
+  sei();
   
   // TODO:
-  // We start receiving bytes and place them into a deque,
-  // which we then parse into our X10_Code scheme.. -bjarke, 4th Febuary 2019.
+  // We start receiving bytes and place them into a deque. We receive in two buffers.
+  // If we are selected in one of the commands we act on it, if not we do nothing. -bjarke, 15th April 2019.
 
   X10_Code* result = new X10_Code(HOUSE_A, OFF);
   
