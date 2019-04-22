@@ -4,6 +4,9 @@ std::deque<char unsigned> encoded_packet; // This packet is empty unless we are 
 std::deque<char unsigned> lpf_buffer;     // This buffer is loaded with bits received at 120hz.
 std::deque<char unsigned> hpf_buffer;	  // This buffer is loaded with bits received at 220hz.
 
+// @Incomplete:
+// The X10 protocol is not yet finished, we need to specify which codes
+// that trigger 220 kHz transmission, by default we transmit at 120 kHz. -bjarke, 22nd April 2019.
 void X10_Controller::transmit_code(X10_Code* code) {
   assert(this->X10_state == IDLE);
   this->set_state(SENDING);
@@ -110,7 +113,11 @@ ISR(INT0_vect) {
   if(!encoded_packet.empty()) {
     current_bit = encoded_packet.front();
 
+    // @TODO:
+    // Add functionality to choose between 120/220 KHz transmission
+    // depending on some global state based on previous received X10 commands -bjarke, 22nd April 2019.
     START_TIMER0;
+    
     START_TIMER1; // This creates an interrupt after 1ms.
 
     while((TCCR1B >> CS10) & 1) == 1) {

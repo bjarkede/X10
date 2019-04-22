@@ -13,8 +13,14 @@
 #define SET_TIMER0_MASK TIMSK0 |= (1<<OCIE0A)
 #define START_TIMER0 TCCR0B |= (1<<CS00)
 #define STOP_TIMER0 TCCR0B &= ~(1<<CS00)
+
 #define START_TIMER1 TCCR1B |= (1<<CS10)
 #define STOP_TIMER1 TCCR1B &= ~(1<<CS10)
+
+#define SET_TIMER2_WAVEFORM TCCR2A |= (1<<WGM11)
+#define SET_TIMER2_MASK TIMSK2 |= (1<<OCIE2A)
+#define START_TIMER2 TCCR2B |= (1<<CS20)
+#define STOP_TIMER2 TCCR1B &= ~(1<<CS20)
 
 #define SET_INT0_SENSE_CONTROL EICRA |= (1<<ISC00)|(1<<ISC01) // Rising edge
 #define START_INT0_INTERRUPT EIMSK |= (1<<INT0)
@@ -81,11 +87,11 @@ void TIMER1_init() {
 }
 
 // @Incomplete:
-// We use TIMER2 to to read data into our global buffer.
-// When the buffer equals the X10_Code scheme start_code,
-// we break, and enter receiving state -bjarke, 5th Febuary 2019.
+// We use TIMER2 to transmit at 220 khz -bjarke, 22nd April 2019.
 void TIMER2_init() {
-
+  SET_TIMER2_WAVEFORM;
+  SET_TIMER2_MASK;
+  ORC2A = 35; // See documentation for this value...
 }
 
 void INT0_init() {
