@@ -39,6 +39,7 @@ void X10_Controller::transmit_code(X10_Code* code) {
   // Start the external interrupt/TIMER0 now that we have parsed the bits.
   INT0_init();
   TIMER0_init();
+  TIMER1_init(); // Used for 1ms delays
   sei();
   
   // Then wait until the global packet is empty...
@@ -77,9 +78,6 @@ X10_Code* X10_Controller::receive_code() {
   return result;
 }
 
-// @Incomplete
-// This is the function that runs when out X10_state is IDLE. The function
-// Checks if a START_CODE is sent out on the X10 network. -bjarke, 2nd Febuary 2019.
 bool X10_Controller::idle() {
   assert(this->X10_state == IDLE);
   
@@ -87,24 +85,52 @@ bool X10_Controller::idle() {
   // We want to use a timer to keep track of some global buffer
   // of bytes. When this buffer equals our X10 start code, we
   // start receiving the bytes. -bjarke, 4th Febuary 2019.
-  
+
+  INT0_init();
+  TIMER2_init(); // @Incomplete: Implement this to read data into global buffers.
+  sei();
+
+  while(1) {
+
+    if(lpf_buffer.size() > 4 && hpf_buffer.size() > 4) {
+      // Maintain 4 bits while idle untill the start_code is registered.
+      lpf_buffer.pop_front();
+      hpf_buffer.pop_front();
+    }
+    
+  }
+
   return true;
 }
 
 // @Incomplete:
 // When we cross 0 on the AC power line, we do an external interrupt. 
-// Then we send a bit for 1ms, at 120kHz. -bjarke, 1st Febuary 2019.
+// Then we send a bit for 1ms, at 120kHz and 220kHz. -bjarke, 1st Febuary 2019.
 ISR(INT0_vect) {
   if(!encoded_packet.empty()) {
     current_bit = encoded_packet.front();
 
-    // @TODO:
-    // Transmit the bit for 1 ms.
     START_TIMER0;
+    START_TIMER1; // This creates an interrupt after 1ms.
+
+    while((TCCR1B >> CS10) & 1) == 1) {
+      // @Incomplete:
+      // While the 1ms pass we need to send the burst either on lpf or hpf
+      // and we have yet to implement the timer that sends on hpf -bjarke, 22nd April 2019.
+    }
     
     // On the next interrupt, transmit the next bit, by removing this one.
     encoded_packet.pop_front();
   }
+
+  // @Incomplete: We use this when we want to receive bits.
+  if(encoded_packet.empty()) {}
+  
+}
+
+ISR(TIMER1_COMPA_vect) {
+  STOP_TIMER1; // Stop TIMER1, since 1 ms has passed.
+  STOP_TIMER0; // Likewise stop TIMER0, since we no longer want to transmit the bit.
 }
 
 ISR(TIMER0_COMPA_vect) {

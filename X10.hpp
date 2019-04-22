@@ -12,7 +12,9 @@
 #define SET_TIMER0_WAVEFORM TCCR0A |= (1<<WGM01)
 #define SET_TIMER0_MASK TIMSK0 |= (1<<OCIE0A)
 #define START_TIMER0 TCCR0B |= (1<<CS00)
-#define STOP_TIMER0 TCCR0B &= 0B11111110
+#define STOP_TIMER0 TCCR0B &= ~(1<<CS00)
+#define START_TIMER1 TCCR1B |= (1<<CS10)
+#define STOP_TIMER1 TCCR1B &= ~(1<<CS10)
 
 #define SET_INT0_SENSE_CONTROL EICRA |= (1<<ISC00)|(1<<ISC01) // Rising edge
 #define START_INT0_INTERRUPT EIMSK |= (1<<INT0)
@@ -69,6 +71,13 @@ void TIMER0_init() {
   OCR0A = 65; // See documentation for this value...
   
   return;
+}
+
+// We use this timer to create a delay of 1 ms
+void TIMER1_init() {
+  TCCR1B |= (1 << WGM12);  // Set CTC Mode
+  TIMSK1 |= (1 << OCIE1A); // Interrupt enable
+  ORC1A   = 15999;         // It takes roughly 1 ms to reach this
 }
 
 // @Incomplete:

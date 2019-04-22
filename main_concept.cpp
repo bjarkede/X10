@@ -15,7 +15,7 @@ int main(int argc, char* argv[]) {
   X10_Controller* controller = new X10_Controller();
 
   for(;;) {
-    if(!controller->idle()) {
+    if(controller->X10_state != IDLE) {
       X10_Code code = controller->receive_code();
 
       // Act on the received X10_Code...      
