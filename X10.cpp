@@ -155,8 +155,10 @@ ISR(INT0_vect) {
     // We want to use some timer to load into our two global buffers.
     // For 1ms we look at some receiving pin, and if we receive HIGH,
     // we load a 1 into our buffer, else we always load 0. -bjarke, 23th April 2019.
+    while(((TCCR1B >> CS10) & 1) == 1) {
+      // If some port goes HIGH, load either the lpf or hpf buffer.
+    }
   }
-
 } 
 
 ISR(TIMER1_COMPA_vect) {
