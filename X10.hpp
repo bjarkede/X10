@@ -67,6 +67,13 @@ public:
 
 };
 
+
+// @Incomplete:
+// Implement the decoder, with a lookup table to identify X10 commands. -bjarke, 23th April 2019.
+void decode_manchester_vector(std::vector<char unsigned> v) {
+  return;
+}
+
 // @Incomplete:
 // We need to specify the output pin for the signal.
 // We don't start the timer yet, because we want to do that exactly when we do
