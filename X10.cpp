@@ -12,8 +12,8 @@ state global_state;
 void X10_Controller::transmit_code(X10_Code* code) {
   assert(this->X10_state == IDLE);
   this->set_state(SENDING);
-
   global_state = SENDING;
+
   bool continous_flag = false;
   char unsigned current_bit;
   
@@ -47,6 +47,8 @@ void X10_Controller::transmit_code(X10_Code* code) {
   TIMER0_init();
   TIMER1_init(); // Used for 1ms delays
   sei();
+
+  START_INT0_INTERRUPT;
   
   // Then wait until the global packet is empty...
   while(!encoded_packet.empty()) {
@@ -57,7 +59,9 @@ void X10_Controller::transmit_code(X10_Code* code) {
   STOP_INT0_INTERRUPT;
   STOP_TIMER0;
   cli();
-  
+
+
+  global_state = IDLE;
   this->set_state(IDLE);
   return;
 }
@@ -65,13 +69,14 @@ void X10_Controller::transmit_code(X10_Code* code) {
 X10_Code* X10_Controller::receive_code() {
   assert(this->X10_state == IDLE);
   this->set_state(RECEIVING);
-
   global_state = RECEIVING;
 
   // Start the external interrupt.
   INT0_init();
   TIMER1_init(); // We use this to time the length of the bursts.
   sei();
+
+  START_INT0_INTERRUPT;
 
   int counter = 0;
 
@@ -82,6 +87,8 @@ X10_Code* X10_Controller::receive_code() {
 
     // If we have seen 4 zeroes in a row we break the loop and start decoding.
     if(counter == 4) {
+      STOP_INT0_INTERRUPT;
+      STOP_TIMER1;
       // Resize the vectors, to remove the stop-code.
       lpf_buffer.resize(lpf_buffer.size() - 4);
       hpf_buffer.resize(hpf_buffer.size() - 4);
@@ -93,7 +100,8 @@ X10_Code* X10_Controller::receive_code() {
   // We need to implement a manchester to X10_Code decoder. -bjarke, 23th April 2019.
 
   X10_Code* result = new X10_Code(HOUSE_A, OFF);
-  
+
+  global_state = IDLE;
   this->set_state(IDLE);
   return result;
 }
@@ -101,7 +109,6 @@ X10_Code* X10_Controller::receive_code() {
 bool X10_Controller::idle() {
   assert(this->X10_state == IDLE);
   this->set_state(IDLE);
-
   global_state = IDLE;
   
   // TODO:
@@ -143,10 +150,9 @@ ISR(INT0_vect) {
   }
 
   if(global_state = RECEIVING) {
-    // @Incomplete:
-    // We want to use some timer to load into our two global buffers.
-    // For 1ms we look at some receiving pin, and if we receive HIGH,
-    // we load a 1 into our buffer, else we always load 0. -bjarke, 23th April 2019.
+
+    START_TIMER1;
+
     while(((TCCR1B >> CS10) & 1) == 1) {
       // If some port goes HIGH, load either the lpf or hpf buffer.
     }
