@@ -62,10 +62,6 @@ void X10_Controller::transmit_code(X10_Code* code) {
   return;
 }
 
-// @Incomplete:
-// We want to listen to the X10 network, and wait for a start-code
-// while we are idle.. if our house_code and number_code is sent,
-// we act on the information sent. -bjarke, 30th January 2019.
 X10_Code* X10_Controller::receive_code() {
   assert(this->X10_state == IDLE);
   this->set_state(RECEIVING);
@@ -78,10 +74,6 @@ X10_Code* X10_Controller::receive_code() {
   sei();
 
   int counter = 0;
-  
-  // TODO:
-  // We start receiving bytes and place them into a deque. We receive in two buffers.
-  // If we are selected in one of the commands we act on it, if not we do nothing. -bjarke, 15th April 2019.
 
   while(1) {
     if(lpf_buffer.back() != 1) {
