@@ -4,6 +4,8 @@ std::deque<char unsigned> encoded_packet; // This packet is empty unless we are 
 std::deque<char unsigned> lpf_buffer;     // This buffer is loaded with bits received at 120hz.
 std::deque<char unsigned> hpf_buffer;	  // This buffer is loaded with bits received at 220hz.
 
+state global_state;
+
 // @Incomplete:
 // The X10 protocol is not yet finished, we need to specify which codes
 // that trigger 220 kHz transmission, by default we transmit at 120 kHz. -bjarke, 22nd April 2019.
@@ -11,6 +13,7 @@ void X10_Controller::transmit_code(X10_Code* code) {
   assert(this->X10_state == IDLE);
   this->set_state(SENDING);
 
+  global_state = SENDING;
   bool continous_flag = false;
   char unsigned current_bit;
   
@@ -67,6 +70,8 @@ X10_Code* X10_Controller::receive_code() {
   assert(this->X10_state == IDLE);
   this->set_state(RECEIVING);
 
+  global_state = RECEIVING;
+
   // Start the external interrupt.
   INT0_init();
   TIMER1_init(); // We use this to time the length of the bursts.
@@ -103,6 +108,9 @@ X10_Code* X10_Controller::receive_code() {
 
 bool X10_Controller::idle() {
   assert(this->X10_state == IDLE);
+  this->set_state(IDLE);
+
+  global_state = IDLE;
   
   // TODO:
   // We want to use a timer to keep track of some global buffer
@@ -110,7 +118,6 @@ bool X10_Controller::idle() {
   // start receiving the bytes. -bjarke, 4th Febuary 2019.
 
   INT0_init();
-  TIMER2_init(); // @Incomplete: Implement this to read data into global buffers.
   sei();
 
   while(1) {
@@ -127,7 +134,7 @@ bool X10_Controller::idle() {
 }
 
 ISR(INT0_vect) {
-  if(!encoded_packet.empty()) {
+  if(!encoded_packet.empty() && global_state == SENDING) {
     current_bit = encoded_packet.front();
 
     // @TODO:
@@ -143,10 +150,14 @@ ISR(INT0_vect) {
     encoded_packet.pop_front();
   }
 
-  // @Incomplete: We use this when we want to receive bits.
-  if(encoded_packet.empty()) {}
-  
-}
+  if(global_state = RECEIVING) {
+    // @Incomplete:
+    // We want to use some timer to load into our two global buffers.
+    // For 1ms we look at some receiving pin, and if we receive HIGH,
+    // we load a 1 into our buffer, else we always load 0. -bjarke, 23th April 2019.
+  }
+
+} 
 
 ISR(TIMER1_COMPA_vect) {
   STOP_TIMER1; // Stop TIMER1, since 1 ms has passed.
