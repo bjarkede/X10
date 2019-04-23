@@ -110,11 +110,6 @@ bool X10_Controller::idle() {
   assert(this->X10_state == IDLE);
   this->set_state(IDLE);
   global_state = IDLE;
-  
-  // TODO:
-  // We want to use a timer to keep track of some global buffer
-  // of bytes. When this buffer equals our X10 start code, we
-  // start receiving the bytes. -bjarke, 4th Febuary 2019.
 
   INT0_init();
   sei();
@@ -133,8 +128,7 @@ bool X10_Controller::idle() {
       lpf_buffer.pop_front();
       hpf_buffer.pop_front();
     }
-
-    // Compare the two buffers to the START_CODE.
+	  
     if(compare_deque.size() == lpf_buffer.size() || compare_deque.size() == hpf_buffer.size()) {
       is_equal_lpf = std::equal(compare_deque.begin(), compare_deque.end(), lpf_buffer.begin());
       is_equal_hpf = std::equal(compare_deque.begin(), compare_deque.end(), hpf_buffer.begin());
