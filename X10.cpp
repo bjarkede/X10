@@ -119,7 +119,15 @@ bool X10_Controller::idle() {
   INT0_init();
   sei();
 
-  while(1) {
+  START_INT0_INTERRUPT;
+  std::deque<char unsigned> compare_deque;
+  compare_deque.push_back(START_CODE);
+  bool is_equal_lpf = false;
+  bool is_equal_hpf = false;
+
+  // @Unfinished:
+  // Not sure about the implementation of this yet.
+  while(!is_equal_lpf || !is_equal_hpf) {
 
     if(lpf_buffer.size() > 4 && hpf_buffer.size() > 4) {
       // Maintain 4 bits while idle untill the start_code is registered.
@@ -127,9 +135,16 @@ bool X10_Controller::idle() {
       hpf_buffer.pop_front();
     }
 
+    if(compare_deque.size() == lpf_buffer.size() || compare_deque.size() == hpf_buffer.size()) {
+      is_equal_lpf = std::equal(compare_deque.begin(), compare_deque.end(), lpf_buffer.begin());
+      is_equal_hpf = std::equal(compare_deque.begin(), compare_deque.end(), hpf_buffer.begin());
+    }
+
   }
 
-  return true;
+  if(is_equal_lpf || is_equal_hpf) {
+    return false; // We received the start-code and need to receive.
+  } else { return true; }
 }
 
 ISR(INT0_vect) {
