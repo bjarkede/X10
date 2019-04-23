@@ -108,6 +108,8 @@ X10_Code* X10_Controller::receive_code() {
 
 bool X10_Controller::idle() {
   assert(this->X10_state == IDLE);
+  assert(lpf_buffer.empty());
+  assert(hpf_buffer.empty());
   this->set_state(IDLE);
   global_state = IDLE;
 
