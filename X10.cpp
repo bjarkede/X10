@@ -100,7 +100,7 @@ bool X10_Controller::idle() {
       lpf_buffer.pop_front();
       hpf_buffer.pop_front();
     }
-    
+
   }
 
   return true;
@@ -120,7 +120,7 @@ ISR(INT0_vect) {
     
     START_TIMER1; // This creates an interrupt after 1ms.
 
-    while((TCCR1B >> CS10) & 1) == 1) {
+    while(((TCCR1B >> CS10) & 1) == 1) {
       // @Incomplete:
       // While the 1ms pass we need to send the burst either on lpf or hpf
       // and we have yet to implement the timer that sends on hpf -bjarke, 22nd April 2019.
@@ -142,8 +142,13 @@ ISR(TIMER1_COMPA_vect) {
 
 ISR(TIMER0_COMPA_vect) {
   // @Incomplete:
-  // We need to send out HIGH on some port, then disable the timer and send low untill
-  // the next zero crossing point. -bjarke, 1st Febuary 2019.
+  // When we know which pin we need to send the burst on, we toggle the pin here.
+  // -bjarke, 23th April 2019.
+}
+
+ISR(TIMER2_COMPA_vect) {
+  // @Incomplete:
+  // If we are sending at 220 KHz we toggle the pin here. -bjarke, 23th April 2019.
 }
 
 
