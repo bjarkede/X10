@@ -71,16 +71,25 @@ X10_Code* X10_Controller::receive_code() {
   INT0_init();
   TIMER1_init(); // We use this to time the length of the bursts.
   sei();
+
+  int counter = 0;
   
   // TODO:
   // We start receiving bytes and place them into a deque. We receive in two buffers.
   // If we are selected in one of the commands we act on it, if not we do nothing. -bjarke, 15th April 2019.
 
   while(1) {
-    // @IDEA:
-    // If we have a local buffer of the last 4-6 bytes received in either
-    // buffer, and if one of those are equal to some stop-code (0000),
-    // we can break from this and start decoding the deques. -bjarke, 23th April 2019.
+    if(lpf_buffer.back() != 1) {
+      ++counter;
+    } else { counter = 0; }
+
+    // If we have seen 4 zeroes in a row we break the loop and start decoding.
+    if(counter == 4) {
+      // Resize the vectors, to remove the stop-code.
+      lpf_buffer.resize(lpf_buffer.size() - 4);
+      hpf_buffer.resize(hpf_buffer.size() - 4);
+      break;
+    }
   }
 
   // @Incomplete:
