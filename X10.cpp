@@ -85,13 +85,13 @@ X10_Code* X10_Controller::receive_code() {
       ++counter;
     } else { counter = 0; }
 
-    // If we have seen 4 zeroes in a row we break the loop and start decoding.
-    if(counter == 4) {
+    // If we have seen 12 zeroes in a row we break the loop and start decoding.
+    if(counter == 12) {
       STOP_INT0_INTERRUPT;
       STOP_TIMER1;
       // Resize the vectors, to remove the stop-code.
-      lpf_buffer.resize(lpf_buffer.size() - 4);
-      hpf_buffer.resize(hpf_buffer.size() - 4);
+      lpf_buffer.resize(lpf_buffer.size() - 12);
+      hpf_buffer.resize(hpf_buffer.size() - 12);
       break;
     }
   }
