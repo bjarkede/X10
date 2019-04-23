@@ -128,13 +128,13 @@ bool X10_Controller::idle() {
   // @Unfinished:
   // Not sure about the implementation of this yet.
   while(!is_equal_lpf || !is_equal_hpf) {
-
     if(lpf_buffer.size() > 4 && hpf_buffer.size() > 4) {
       // Maintain 4 bits while idle untill the start_code is registered.
       lpf_buffer.pop_front();
       hpf_buffer.pop_front();
     }
 
+    // Compare the two buffers to the START_CODE.
     if(compare_deque.size() == lpf_buffer.size() || compare_deque.size() == hpf_buffer.size()) {
       is_equal_lpf = std::equal(compare_deque.begin(), compare_deque.end(), lpf_buffer.begin());
       is_equal_hpf = std::equal(compare_deque.begin(), compare_deque.end(), hpf_buffer.begin());
