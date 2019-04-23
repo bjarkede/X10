@@ -69,11 +69,22 @@ X10_Code* X10_Controller::receive_code() {
 
   // Start the external interrupt.
   INT0_init();
+  TIMER1_init(); // We use this to time the length of the bursts.
   sei();
   
   // TODO:
   // We start receiving bytes and place them into a deque. We receive in two buffers.
   // If we are selected in one of the commands we act on it, if not we do nothing. -bjarke, 15th April 2019.
+
+  while(1) {
+    // @IDEA:
+    // If we have a local buffer of the last 4-6 bytes received in either
+    // buffer, and if one of those are equal to some stop-code (0000),
+    // we can break from this and start decoding the deques. -bjarke, 23th April 2019.
+  }
+
+  // @Incomplete:
+  // We need to implement a manchester to X10_Code decoder. -bjarke, 23th April 2019.
 
   X10_Code* result = new X10_Code(HOUSE_A, OFF);
   
@@ -106,9 +117,6 @@ bool X10_Controller::idle() {
   return true;
 }
 
-// @Incomplete:
-// When we cross 0 on the AC power line, we do an external interrupt. 
-// Then we send a bit for 1ms, at 120kHz and 220kHz. -bjarke, 1st Febuary 2019.
 ISR(INT0_vect) {
   if(!encoded_packet.empty()) {
     current_bit = encoded_packet.front();
@@ -120,11 +128,7 @@ ISR(INT0_vect) {
     
     START_TIMER1; // This creates an interrupt after 1ms.
 
-    while(((TCCR1B >> CS10) & 1) == 1) {
-      // @Incomplete:
-      // While the 1ms pass we need to send the burst either on lpf or hpf
-      // and we have yet to implement the timer that sends on hpf -bjarke, 22nd April 2019.
-    }
+    while(((TCCR1B >> CS10) & 1) == 1) {}
     
     // On the next interrupt, transmit the next bit, by removing this one.
     encoded_packet.pop_front();
@@ -138,6 +142,7 @@ ISR(INT0_vect) {
 ISR(TIMER1_COMPA_vect) {
   STOP_TIMER1; // Stop TIMER1, since 1 ms has passed.
   STOP_TIMER0; // Likewise stop TIMER0, since we no longer want to transmit the bit.
+  STOP_TIMER2; // Stop this as well if we are sending at 220 KHz.
 }
 
 ISR(TIMER0_COMPA_vect) {
