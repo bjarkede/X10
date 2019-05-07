@@ -70,7 +70,31 @@ public:
 
 // @Incomplete:
 // Implement the decoder, with a lookup table to identify X10 commands. -bjarke, 23th April 2019.
-void decode_manchester_vector(std::vector<char unsigned> v) {
+X10_Code* decode_manchester_vector(std::deque<char unsigned> q) {
+
+  char unsigned current_bit;
+  char unsigned next_bit;
+  std::deque<char unsigned> result;
+  
+  while(!q.empty()) {
+    current_bit = q.pop_front();
+    next_bit    = q.pop_front();
+    if(current_bit == 0x1) {
+      if(next_bit  == 0x0) {
+	result.push_back(0x1);
+      }
+    }
+    if(current_bit == 0x0) {
+      if(next_bit  == 0x1) {
+	result.push_back(0x0);
+      }
+    }
+  }
+
+  // @TODO:
+  // Translate result which is non-manchester encoded to X10_Code
+  // Here we could implement a look up table.. -bjarke, 7th May 2019.
+  
   return;
 }
 
@@ -104,8 +128,6 @@ void TIMER2_init() {
 void INT0_init() {
   SET_INT0_SENSE_CONTROL;
   START_INT0_INTERRUPT;
-  
-  return;
 }
 
 // @Hack:

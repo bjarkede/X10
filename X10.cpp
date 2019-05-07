@@ -1,8 +1,8 @@
 #include "X10.hpp"
 
 std::deque<char unsigned> encoded_packet; // This packet is empty unless we are sending an X10 Command.
-std::deque<char unsigned> lpf_buffer;     // This buffer is loaded with bits received at 120hz.
-std::deque<char unsigned> hpf_buffer;	  // This buffer is loaded with bits received at 220hz.
+std::deque<char unsigned> lpf_buffer;     // This buffer is loaded with bits received at 120khz.
+std::deque<char unsigned> hpf_buffer;	  // This buffer is loaded with bits received at 300khz.
 
 state global_state;
 
@@ -84,7 +84,6 @@ X10_Code* X10_Controller::receive_code() {
     if(lpf_buffer.back() != 1) {
       ++counter;
     } else { counter = 0; }
-
     // If we have seen 12 zeroes in a row we break the loop and start decoding.
     if(counter == 12) {
       STOP_INT0_INTERRUPT;
@@ -98,6 +97,8 @@ X10_Code* X10_Controller::receive_code() {
 
   // @Incomplete:
   // We need to implement a manchester to X10_Code decoder. -bjarke, 23th April 2019.
+
+  
 
   X10_Code* result = new X10_Code(HOUSE_A, OFF);
 
@@ -122,8 +123,6 @@ bool X10_Controller::idle() {
   bool is_equal_lpf = false;
   bool is_equal_hpf = false;
 
-  // @Unfinished:
-  // Not sure about the implementation of this yet.
   while(!is_equal_lpf || !is_equal_hpf) {
     if(lpf_buffer.size() > 4 && hpf_buffer.size() > 4) {
       // Maintain 4 bits while idle untill the start_code is registered.
