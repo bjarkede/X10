@@ -75,17 +75,19 @@ X10_Code* decode_manchester_vector(std::deque<char unsigned> q) {
   char unsigned current_bit;
   char unsigned next_bit;
   std::deque<char unsigned> result;
-  
+
   while(!q.empty()) {
-    current_bit = q.pop_front();
-    next_bit    = q.pop_front();
+    current_bit = q.front();
+    q.pop_front();
+    next_bit = q.front();
+    q.pop_front();
+
     if(current_bit == 0x1) {
-      if(next_bit  == 0x0) {
+      if(next_bit == 0x0) {
 	result.push_back(0x1);
       }
-    }
-    if(current_bit == 0x0) {
-      if(next_bit  == 0x1) {
+    } else if (current_bit == 0x0) {
+      if(next_bit == 0x1) {
 	result.push_back(0x0);
       }
     }

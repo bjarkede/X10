@@ -147,7 +147,7 @@ ISR(INT0_vect) {
     current_bit = encoded_packet.front();
 
     // @TODO:
-    // Add functionality to choose between 120/220 KHz transmission
+    // Add functionality to choose between 120/300 KHz transmission
     // depending on some global state based on previous received X10 commands -bjarke, 22nd April 2019.
     START_TIMER0;
     
