@@ -94,11 +94,11 @@ void TIMER1_init() {
 }
 
 // @Incomplete:
-// We use TIMER2 to transmit at 220 khz -bjarke, 22nd April 2019.
+// We use TIMER2 to transmit at 300 khz -bjarke, 7th May 2019.
 void TIMER2_init() {
   SET_TIMER2_WAVEFORM;
   SET_TIMER2_MASK;
-  ORC2A = 35; // See documentation for this value...
+  ORC2A = 27; // 16 MHz / (2 * prescaler (1) * desired_frequency) = 26.67
 }
 
 void INT0_init() {
