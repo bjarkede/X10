@@ -72,6 +72,7 @@ public:
 // Implement the decoder, with a lookup table to identify X10 commands. -bjarke, 23th April 2019.
 X10_Code* decode_manchester_vector(std::deque<char unsigned> q) {
 
+  // First we we decode the manchester to just a regular queue of bits
   char unsigned current_bit;
   char unsigned next_bit;
   std::deque<char unsigned> result;
@@ -93,9 +94,34 @@ X10_Code* decode_manchester_vector(std::deque<char unsigned> q) {
     }
   }
 
-  // @TODO:
-  // Translate result which is non-manchester encoded to X10_Code
-  // Here we could implement a look up table.. -bjarke, 7th May 2019.
+  // Now we make the bits into bit-strings so we can look up in
+  // our X10 lookup table.
+  char unsigned hc;
+  char unsigned fc;
+
+  int i = 0;
+  int j = 0;
+  
+  for(std::deque<char unsigned>::reverse_iterator rit = result.rbegin(); rit != result.rend(); ++rit) {
+    if(i < 6) {
+      fc ^= (-*rit ^ fc) & (1 << i);
+      i++;
+    }
+    if(i > 5) {
+      hc ^= (-*rit ^ hc) & (1 << j);
+      j++;
+    }
+  }
+
+  // @TODO
+  // Now we need to specify what to do with our received code...
+  // We could add a flag to this function call, since we know that the first
+  // received code, always should be house then unit.
+  // The second received code should be house then function.
+  // Adding this functionality could allow us to determine if we should stay
+  // active or return to idle based on the info returned from this function.
+  // Also it could allow us to stay active and act on the function returned
+  // from this function. -bjarke, 7th May 2019.
   
   return;
 }
