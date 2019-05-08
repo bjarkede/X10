@@ -98,10 +98,8 @@ X10_Code* X10_Controller::receive_code() {
   // @Incomplete:
   // We need to implement a manchester to X10_Code decoder. -bjarke, 23th April 2019.
 
-  
-
-  X10_Code* result = new X10_Code(HOUSE_A, OFF);
-
+  X10_Code* result = decode_manchester_deque(lpf_buffer);
+ 
   global_state = IDLE;
   this->set_state(IDLE);
   return result;

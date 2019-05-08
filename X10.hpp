@@ -29,6 +29,10 @@
 // X10 States
 enum state { IDLE = 0, SENDING = 1, RECEIVING = 2 };
 
+// @Incomplete:
+// We also want to send the function code, so we dont have to
+// do two transmissions, one for house and key, and
+// for house and function -bjarke, 8th May 2019.
 struct X10_Code  {
   std::deque<char unsigned> packet;
   X10_Code(char unsigned house_code, char unsigned number_code)
@@ -70,7 +74,7 @@ public:
 
 // @Incomplete:
 // Implement the decoder, with a lookup table to identify X10 commands. -bjarke, 23th April 2019.
-X10_Code* decode_manchester_vector(std::deque<char unsigned> q) {
+X10_Code* decode_manchester_deque(std::deque<char unsigned> q) {
 
   // First we we decode the manchester to just a regular queue of bits
   char unsigned current_bit;
