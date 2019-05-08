@@ -165,6 +165,7 @@ ISR(INT0_vect) {
     // Add functionality to choose between 120/300 KHz transmission
     // depending on some global state based on previous received X10 commands -bjarke, 22nd April 2019.
     START_TIMER0;
+    START_TIMER2;
     
     START_TIMER1; // This creates an interrupt after 1ms.
 
@@ -198,7 +199,7 @@ ISR(TIMER0_COMPA_vect) {
 
 ISR(TIMER2_COMPA_vect) {
   // @Incomplete:
-  // If we are sending at 220 KHz we toggle the pin here. -bjarke, 23th April 2019.
+  // If we are sending at 300 KHz we toggle the pin here. -bjarke, 23th April 2019.
 }
 
 

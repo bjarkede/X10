@@ -35,8 +35,17 @@ enum state { IDLE = 0, SENDING = 1, RECEIVING = 2 };
 // for house and function -bjarke, 8th May 2019.
 struct X10_Code  {
   std::deque<char unsigned> packet;
-  X10_Code(char unsigned house_code, char unsigned number_code, char unsigned function_code)
+
+  char unsigned house_code;
+  char unsigned number_code;
+  char unsigned function_code;
+
+  X10_Code(char unsigned hc, char unsigned nc, char unsigned fc)
   {
+    this->house_code    = hc;
+    this->number_code   = nc;
+    this->function_code = fc;
+    
     // We push it two times, because we need to send it twice.
     for(int i = 0; i < 2; ++i) {
       packet.push_back(house_code);
