@@ -117,16 +117,16 @@ X10_Code* decode_manchester_deque(std::deque<char unsigned> q) {
   int j = 0;
   int k = 0;
   
-  for(std::deque<char unsigned>::reverse_iterator rit = result.rbegin(); rit != result.rend(); ++rit) {
+   for(std::deque<char unsigned>::reverse_iterator rit = result.rbegin(); rit != result.rend(); ++rit) {
     if(i < 6) {
       fc ^= (-*rit ^ fc) & (1 << i);
       i++;
     }
-    if (i < 11) {
+    if (i > 5 && j < 6) {
       kc ^= (-*rit ^ kc) & (1 << j);
       j++;
     }
-    if(i > 5) {
+    if(j > 5 && k < 6) {
       hc ^= (-*rit ^ hc) & (1 << k);
       k++;
     }

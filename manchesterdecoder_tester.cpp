@@ -16,7 +16,19 @@ int main() {
   test.push_back(0x0);
   test.push_back(0x1);
 
-  // Key Code/Function test
+  // Key Code
+  test.push_back(0x0);
+  test.push_back(0x1);
+  test.push_back(0x1);
+  test.push_back(0x0);
+  test.push_back(0x0);
+  test.push_back(0x1);
+  test.push_back(0x1);
+  test.push_back(0x0);
+  test.push_back(0x0);
+  test.push_back(0x1);
+
+  // Function code
   test.push_back(0x0);
   test.push_back(0x1);
   test.push_back(0x1);
@@ -60,24 +72,31 @@ int main() {
     }*/
 
   char unsigned hc;
+  char unsigned kc;
   char unsigned fc;
 
   int i = 0;
   int j = 0;
+  int k = 0;
   
   for(std::deque<char unsigned>::reverse_iterator rit = result.rbegin(); rit != result.rend(); ++rit) {
     if(i < 6) {
       fc ^= (-*rit ^ fc) & (1 << i);
       i++;
     }
-    if(i > 5) {
-      hc ^= (-*rit ^ hc) & (1 << j);
+    if (i > 5 && j < 6) {
+      kc ^= (-*rit ^ kc) & (1 << j);
       j++;
+    }
+    if(j > 5 && k < 6) {
+      hc ^= (-*rit ^ hc) & (1 << k);
+      k++;
     }
   }
 
   std::cout << "HOUSE_CODE is: " << static_cast<unsigned>(hc) << std::endl;
-  std::cout << "OTHER CODE is: " << static_cast<unsigned>(fc) << std::endl;
+  std::cout << "NUMBER CODE is: " << static_cast<unsigned>(kc) << std::endl;
+  std::cout << "FUNCTION_CODE is: " << static_cast<unsigned>(fc) << std::endl;
   
   return 1;
 }
