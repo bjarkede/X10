@@ -4,6 +4,7 @@
 // http://jvde.us/info/x10_protocol.pdf
 
 #define START_CODE 0B0111
+#define STOP_CODE  0B1110
 
 // X10 House Codes
 

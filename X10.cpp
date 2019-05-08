@@ -16,7 +16,13 @@ void X10_Controller::transmit_code(X10_Code* code) {
 
   bool continous_flag = false;
   char unsigned current_bit;
-  
+
+  // Push our start code to the encoded_packet.
+  encoded_packet.push_back(0x0);
+  encoded_packet.push_back(0x1);
+  encoded_packet.push_back(0x1);
+  encoded_packet.push_back(0x1);
+ 
   // Encode our X10_Scheme to manchester.
   while(!code->packet.empty()) {
     if(!continous_flag && code->packet.size() == 3) {
@@ -30,18 +36,19 @@ void X10_Controller::transmit_code(X10_Code* code) {
 
       current_bit = (code->packet.front() & (1 << i)) != 0;
 
-      // We don't encode start codes..
-      if(code->packet.size() == 6 || code->packet.size() == 3) {
-	encoded_packet.push_back(current_bit)
-      } else {
-	encoded_packet.push_back(current_bit);
-	encoded_packet.push_back(current_bit^1);
-      }
+      encoded_packet.push_back(current_bit);
+      encoded_packet.push_back(current_bit^1);
     }
 
     code->packet.pop_front(); // Move onto the next instruction
   }
 
+  // Add the STOP_CODE to our encoded_packet..
+  encoded_packet.push_back(0x1);
+  encoded_packet.push_back(0x1);
+  encoded_packet.push_back(0x1);
+  encoded_packet.push_back(0x0);
+  
   // Start the external interrupt/TIMER0 now that we have parsed the bits.
   INT0_init();
   TIMER0_init();
@@ -78,22 +85,26 @@ X10_Code* X10_Controller::receive_code() {
 
   START_INT0_INTERRUPT;
 
-  int counter = 0;
-
-  while(1) {
-    if(lpf_buffer.back() != 1) {
-      ++counter;
-    } else { counter = 0; }
-    // If we have seen 12 zeroes in a row we break the loop and start decoding.
-    if(counter == 12) {
-      STOP_INT0_INTERRUPT;
-      STOP_TIMER1;
-      // Resize the vectors, to remove the stop-code.
-      lpf_buffer.resize(lpf_buffer.size() - 12);
-      hpf_buffer.resize(hpf_buffer.size() - 12);
-      break;
-    }
+  // We need to check if the last four bits of one of the buffers
+  // is equal to the stop_code.
+  std::deque<char unsigned> compare_deque;
+  compare_deque.push_back(0x1);
+  compare_deque.push_back(0x1);
+  compare_deque.push_back(0x1);
+  compare_deque.push_back(0x0);
+  
+  bool is_equal_stop = false;
+  
+  while(!is_equal_stop) {
+    is_equal_stop = compare_to_stop_code(lpf_buffer, compare_deque);
   }
+
+  // Stop when we have seen the stop code
+  STOP_INT0_INTERRUPT;
+  STOP_TIMER1;
+  // Resize the vectors, to remove the stop-code.
+  lpf_buffer.resize(lpf_buffer.size() - 4);
+  hpf_buffer.resize(hpf_buffer.size() - 4);
 
   // @Incomplete:
   // We need to implement a manchester to X10_Code decoder. -bjarke, 23th April 2019.
@@ -116,8 +127,14 @@ bool X10_Controller::idle() {
   sei();
 
   START_INT0_INTERRUPT;
+
+  // We compare the lpf/hpf buffers 4 bits to the start code.
   std::deque<char unsigned> compare_deque;
-  compare_deque.push_back(START_CODE);
+  compare_deque.push_back(0x0);
+  compare_deque.push_back(0x1);
+  compare_deque.push_back(0x1);
+  compare_deque.push_back(0x1);
+  
   bool is_equal_lpf = false;
   bool is_equal_hpf = false;
 

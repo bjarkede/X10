@@ -35,13 +35,14 @@ enum state { IDLE = 0, SENDING = 1, RECEIVING = 2 };
 // for house and function -bjarke, 8th May 2019.
 struct X10_Code  {
   std::deque<char unsigned> packet;
-  X10_Code(char unsigned house_code, char unsigned number_code)
+  X10_Code(char unsigned house_code, char unsigned number_code, char unsigned function_code)
   {
     // We push it two times, because we need to send it twice.
     for(int i = 0; i < 2; ++i) {
       packet.push_back(START_CODE);
       packet.push_back(house_code);
       packet.push_back(number_code);
+      packet.push_back(function_code);
     }
   }
 };
@@ -101,19 +102,25 @@ X10_Code* decode_manchester_deque(std::deque<char unsigned> q) {
   // Now we make the bits into bit-strings so we can look up in
   // our X10 lookup table.
   char unsigned hc;
+  char unsigned kc;
   char unsigned fc;
 
   int i = 0;
   int j = 0;
+  int k = 0;
   
   for(std::deque<char unsigned>::reverse_iterator rit = result.rbegin(); rit != result.rend(); ++rit) {
     if(i < 6) {
       fc ^= (-*rit ^ fc) & (1 << i);
       i++;
     }
-    if(i > 5) {
-      hc ^= (-*rit ^ hc) & (1 << j);
+    if (i < 11) {
+      kc ^= (-*rit ^ kc) & (1 << j);
       j++;
+    }
+    if(i > 5) {
+      hc ^= (-*rit ^ hc) & (1 << k);
+      k++;
     }
   }
 
@@ -175,4 +182,12 @@ int amount_of_bits(int n) {
   }
 
   return result;
+}
+
+bool compare_to_stop_code(&std::deque<char unsigned> d1, &std::deque<char unsigned> d2) {
+  for(int i = d2.size(); i >= 1; i--) {
+    if (!d1[d1.size()-i]) == d2[d2.size()-i]) { return false; }
+  }
+
+return true;
 }

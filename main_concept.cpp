@@ -23,7 +23,8 @@ int main(int argc, char* argv[]) {
     }
   }
 
-  X10_Code makker = (HOUSE_A, KEY_11);
+  // We should transmit like this:
+  X10_Code makker = (HOUSE_A, KEY_11, ON);
   controller->transmit_code(makker);
 
   return 0;
