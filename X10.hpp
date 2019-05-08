@@ -39,7 +39,6 @@ struct X10_Code  {
   {
     // We push it two times, because we need to send it twice.
     for(int i = 0; i < 2; ++i) {
-      packet.push_back(START_CODE);
       packet.push_back(house_code);
       packet.push_back(number_code);
       packet.push_back(function_code);
