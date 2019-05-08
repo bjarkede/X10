@@ -192,9 +192,9 @@ int amount_of_bits(int n) {
   return result;
 }
 
-bool compare_to_stop_code(&std::deque<char unsigned> d1, &std::deque<char unsigned> d2) {
+bool compare_to_stop_code(std::deque<char unsigned>  &d1, std::deque<char unsigned> &d2) {
   for(int i = d2.size(); i >= 1; i--) {
-    if (!d1[d1.size()-i]) == d2[d2.size()-i]) { return false; }
+    if (d1[d1.size()-i] != d2[d2.size()-i]) { return false; }
   }
 
 return true;
