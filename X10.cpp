@@ -4,6 +4,8 @@ std::deque<char unsigned> encoded_packet; // This packet is empty unless we are 
 std::deque<char unsigned> lpf_buffer;     // This buffer is loaded with bits received at 120khz.
 std::deque<char unsigned> hpf_buffer;	  // This buffer is loaded with bits received at 300khz.
 
+bool signal_state = true;                // We use this to determine if to send HIGH or LOW in ISR.
+
 state global_state;
 
 // @Incomplete:
@@ -169,7 +171,9 @@ ISR(INT0_vect) {
     START_TIMER0; // 120 kHz transmission.
     START_TIMER1; // This creates an interrupt after 1ms.
 
-    while(((TCCR1B >> CS10) & 1) == 1) {}
+    while(((TCCR1B >> CS10) & 1) == 1) {
+      
+    }
     
     // On the next interrupt, transmit the next bit, by removing this one.
     encoded_packet.pop_front();
@@ -227,14 +231,23 @@ ISR(TIMER1_COMPA_vect) {
 }
 
 ISR(TIMER0_COMPA_vect) {
-  // @Incomplete:
-  // When we know which pin we need to send the burst on, we toggle the pin here.
-  // -bjarke, 23th April 2019.
+  if(signal_state) {
+    signal_state = false; 
+    PORTB |= 1 << 0;
+  } else {
+    signal_state = true;
+    PORTB |= 0 << 0;
+  }
 }
 
 ISR(TIMER2_COMPA_vect) {
-  // @Incomplete:
-  // If we are sending at 300 KHz we toggle the pin here. -bjarke, 23th April 2019.
+   if(signal_state) {
+    signal_state = false; 
+    PORTB |= 1 << 0;
+  } else {
+    signal_state = true;
+    PORTB |= 0 << 0;
+  }
 }
 
 
