@@ -99,8 +99,6 @@ void decode_manchester_deque(std::deque<char unsigned> &d1) {
 // This function takes a double ended queue full of bits, and converts
 // it to a deque that has the house, key, and function code in it.
 void convert_to_binary_string(std::deque<char unsigned> &d1) {
-  assert(d1.size() == 14); // We should have a total of 14 bits in this
-  
   char unsigned hc;
   char unsigned kc;
   char unsigned fc;
