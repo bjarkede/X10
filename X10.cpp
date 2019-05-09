@@ -168,11 +168,12 @@ ISR(INT0_vect) {
   if(!encoded_packet.empty() && global_state == SENDING) {
     current_bit = encoded_packet.front();
 
-    START_TIMER0; // 120 kHz transmission.
     START_TIMER1; // This creates an interrupt after 1ms.
 
     while(((TCCR1B >> CS10) & 1) == 1) {
-      
+      if(current_bit == 0x1) {
+	START_TIMER0;
+      }
     }
     
     // On the next interrupt, transmit the next bit, by removing this one.
@@ -185,12 +186,12 @@ ISR(INT0_vect) {
     // We enter this statement, and transmit the messeage at 300 kHz. -bjarke, 9th May 2019.
     current_bit = encoded_packet.front();
 
-    START_TIMER2; // 300 kHz transmission.
     START_TIMER1; // Creates an intterupt after 1ms.
 
     while(((TCCR1B >> CS10) & 1) == 1) {
-      // @TODO:
-      // Implement the sending logic here.
+      if(current_bit = 0x1) {
+	START_TIMER2;
+      }
     }
 
     encoded_packet.pop_front();
