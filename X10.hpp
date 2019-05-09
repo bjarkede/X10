@@ -74,7 +74,7 @@ public:
 
 // This function takes a deque of manchester encoded bits and converts
 // it to a deque of non-encoded bits.
-std::deque<char unsigned> decode_manchester_deque(std::deque<char unsigned> &d1) {
+void decode_manchester_deque(std::deque<char unsigned> &d1) {
 
   // First we we decode the manchester to just a regular queue of bits
   char unsigned current_bit;
@@ -97,8 +97,10 @@ std::deque<char unsigned> decode_manchester_deque(std::deque<char unsigned> &d1)
       }
     }
   }
+
+  d1 = result;
   
-  return result;
+  return;
 }
 
 // This function takes a double ended queue full of bits, and converts
