@@ -27,7 +27,7 @@
 #define STOP_INT0_INTERRUPT EIMSK &= 0B11111110
 
 // X10 States
-enum state { IDLE = 0, SENDING = 1, RECEIVING = 2 };
+enum state { IDLE = 0, SENDING = 1, RECEIVING = 2, ERROR = 3 };
 
 // @Incomplete:
 // We also want to send the function code, so we dont have to
@@ -75,8 +75,7 @@ public:
 // This function takes a deque of manchester encoded bits and converts
 // it to a deque of non-encoded bits.
 void decode_manchester_deque(std::deque<char unsigned> &d1) {
-
-  // First we we decode the manchester to just a regular queue of bits
+  
   char unsigned current_bit;
   char unsigned next_bit;
   std::deque<char unsigned> result;

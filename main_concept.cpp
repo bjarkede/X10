@@ -16,16 +16,12 @@ int main(int argc, char* argv[]) {
 
   for(;;) {
     if(controller->X10_state != IDLE) {
-      X10_Code code = controller->receive_code();
+      auto result = controller->receive_code();
+
+      // Act on the received X10_Code...
       
-      
-      // Act on the received X10_Code...      
     }
   }
-
-  // We should transmit like this:
-  X10_Code makker = (HOUSE_A, KEY_11, ON);
-  controller->transmit_code(makker);
 
   return 0;
 }

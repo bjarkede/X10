@@ -73,7 +73,7 @@ void X10_Controller::transmit_code(X10_Code* code) {
   return;
 }
 
-X10_Code* X10_Controller::receive_code() {
+std::tuple<std::deque<char unsigned>, std::deque<char unsigned>> X10_Controller::receive_code() {
   assert(this->X10_state == IDLE);
   this->set_state(RECEIVING);
   global_state = RECEIVING;
@@ -114,13 +114,11 @@ X10_Code* X10_Controller::receive_code() {
   
   if(!split_and_compare_bits(decode_manchester_deque(hpf_buffer))) {
 
-  };
-
-  
+  }
   
   global_state = IDLE;
   this->set_state(IDLE);
-  return result;
+  return std::make_tuple(lpf_buffer, hpf_buffer);
 }
 
 bool X10_Controller::idle() {
@@ -186,8 +184,26 @@ ISR(INT0_vect) {
 
     START_TIMER1;
 
+    int lpf_prev_size = lpf_buffer.size();
+    int hpf_prev_size = hpf_buffer.size();
+    
     while(((TCCR1B >> CS10) & 1) == 1) {
       // If some port goes HIGH, load either the lpf or hpf buffer.
+      if(((PINB >> 1) & 1) == 1) { // If there is a 1 on this PIN, load 1 into LPF.
+	lpf_buffer.push_back(0x1);
+      }
+      if(((PINB >> 2) & 1) == 1) { // If there is a 1 on this PIN, load 1 into HPF.
+	hpf_buffer.push_back(0x1);
+      }
+    }
+
+    // If the size of the buffer didn't, this means that we didn't receive a 1.
+    // Therefore we load a 0 into the buffer. 
+    if(lpf_prev_size == lpf_buffer.size()) {
+      lpf_buffer.push_back(0x0);
+    }
+    if(hpf_prev_size == hpf_buffer.size()) {
+      hpf_buffer.push_back(0x0);
     }
   }
 } 
