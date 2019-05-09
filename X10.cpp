@@ -106,11 +106,18 @@ X10_Code* X10_Controller::receive_code() {
   lpf_buffer.resize(lpf_buffer.size() - 4);
   hpf_buffer.resize(hpf_buffer.size() - 4);
 
-  // @Incomplete:
-  // We need to implement a manchester to X10_Code decoder. -bjarke, 23th April 2019.
+  if(!split_and_compare_bits(decode_manchester_deque(lpf_buffer))) {
+    // @Incomplete:
+    // The two messages are not equal to eachother, we
+    // need to handle this somehow, and send a messeage back that we got an error. -bjarke 9th May 2019.
+  }
+  
+  if(!split_and_compare_bits(decode_manchester_deque(hpf_buffer))) {
 
-  X10_Code* result = decode_manchester_deque(lpf_buffer);
- 
+  };
+
+  
+  
   global_state = IDLE;
   this->set_state(IDLE);
   return result;

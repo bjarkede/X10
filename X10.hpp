@@ -36,21 +36,13 @@ enum state { IDLE = 0, SENDING = 1, RECEIVING = 2 };
 struct X10_Code  {
   std::deque<char unsigned> packet;
 
-  char unsigned house_code;
-  char unsigned number_code;
-  char unsigned function_code;
-
   X10_Code(char unsigned hc, char unsigned nc, char unsigned fc)
   {
-    this->house_code    = hc;
-    this->number_code   = nc;
-    this->function_code = fc;
-    
     // We push it two times, because we need to send it twice.
     for(int i = 0; i < 2; ++i) {
-      packet.push_back(house_code);
-      packet.push_back(number_code);
-      packet.push_back(function_code);
+      packet.push_back(hc);
+      packet.push_back(nc);
+      packet.push_back(fc);
     }
   }
 };
@@ -80,21 +72,20 @@ public:
 
 };
 
-
-// @Incomplete:
-// Implement the decoder, with a lookup table to identify X10 commands. -bjarke, 23th April 2019.
-X10_Code* decode_manchester_deque(std::deque<char unsigned> q) {
+// This function takes a deque of manchester encoded bits and converts
+// it to a deque of non-encoded bits.
+std::deque<char unsigned> decode_manchester_deque(std::deque<char unsigned> &d1) {
 
   // First we we decode the manchester to just a regular queue of bits
   char unsigned current_bit;
   char unsigned next_bit;
   std::deque<char unsigned> result;
 
-  while(!q.empty()) {
-    current_bit = q.front();
-    q.pop_front();
-    next_bit = q.front();
-    q.pop_front();
+  while(!d1.empty()) {
+    current_bit = d1.front();
+    d1.pop_front();
+    next_bit = d1.front();
+    d1.pop_front();
 
     if(current_bit == 0x1) {
       if(next_bit == 0x0) {
@@ -106,9 +97,15 @@ X10_Code* decode_manchester_deque(std::deque<char unsigned> q) {
       }
     }
   }
+  
+  return result;
+}
 
-  // Now we make the bits into bit-strings so we can look up in
-  // our X10 lookup table.
+// This function takes a double ended queue full of bits, and converts
+// it to a deque that has the house, key, and function code in it.
+std::deque<char unsigned> convert_to_binary_string(std::deque<char unsigned> &d1) {
+  assert(d1.size() == 14); // We should have a total of 14 bits in this
+  
   char unsigned hc;
   char unsigned kc;
   char unsigned fc;
@@ -117,7 +114,7 @@ X10_Code* decode_manchester_deque(std::deque<char unsigned> q) {
   int j = 0;
   int k = 0;
   
-   for(std::deque<char unsigned>::reverse_iterator rit = result.rbegin(); rit != result.rend(); ++rit) {
+  for(std::deque<char unsigned>::reverse_iterator rit = d1.rbegin(); rit != d1.rend(); ++rit) {
     if(i < 6) {
       fc ^= (-*rit ^ fc) & (1 << i);
       i++;
@@ -132,17 +129,12 @@ X10_Code* decode_manchester_deque(std::deque<char unsigned> q) {
     }
   }
 
-  // @TODO
-  // Now we need to specify what to do with our received code...
-  // We could add a flag to this function call, since we know that the first
-  // received code, always should be house then unit.
-  // The second received code should be house then function.
-  // Adding this functionality could allow us to determine if we should stay
-  // active or return to idle based on the info returned from this function.
-  // Also it could allow us to stay active and act on the function returned
-  // from this function. -bjarke, 7th May 2019.
+  d1.clear();
+  d1.push_back(hc);
+  d1.push_back(kc);
+  d1.push_back(fc);
   
-  return;
+  return d1;
 }
 
 // @Incomplete:
@@ -199,3 +191,17 @@ bool compare_to_stop_code(std::deque<char unsigned>  &d1, std::deque<char unsign
 
 return true;
 }
+
+bool split_and_compare_bits(std::deque<char unsigned> &d1) {
+  std::vector<char unsigned> d2(
+		    std::make_move_iterator(d1.begin() + d1.size()/2),
+		    std::make_move_iterator(d1.end()));
+  d1.erase(d1.begin() + d1.size()/2, d1.end());
+  
+  for(int i = 0; i <= d1.size(); i++){
+    if(d1[i] != d2[i]) { return false; }
+  }
+
+  return true;
+}
+

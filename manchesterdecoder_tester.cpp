@@ -2,6 +2,38 @@
 #include <deque>
 #include <bitset>
 
+std::deque<char unsigned> convert_to_binary_string(std::deque<char unsigned> &d1) {
+  char unsigned hc;
+  char unsigned kc;
+  char unsigned fc;
+
+  int i = 0;
+  int j = 0;
+  int k = 0;
+  
+  for(std::deque<char unsigned>::reverse_iterator rit = d1.rbegin(); rit != d1.rend(); ++rit) {
+    if(i < 6) {
+      fc ^= (-*rit ^ fc) & (1 << i);
+      i++;
+    }
+    if (i > 5 && j < 6) {
+      kc ^= (-*rit ^ kc) & (1 << j);
+      j++;
+    }
+    if(j > 5 && k < 6) {
+      hc ^= (-*rit ^ hc) & (1 << k);
+      k++;
+    }
+  }
+
+  d1.clear();
+  d1.push_back(hc);
+  d1.push_back(kc);
+  d1.push_back(fc);
+  
+  return d1;
+}
+
 int main() {
 
   std::deque<char unsigned> test;
@@ -63,40 +95,20 @@ int main() {
   // @TODO:
   // Decoding bits work, now we want to make bit-strings
   // so we can compare to our X10 constants. -bjarke, 7th May 2019.
-  /*char unsigned front;
 
-  while(!result.empty()) {
-    front = result.front();
-    result.pop_front();
-    std::cout << static_cast<unsigned>(front) << std::endl;
-    }*/
-
-  char unsigned hc;
-  char unsigned kc;
-  char unsigned fc;
-
-  int i = 0;
-  int j = 0;
-  int k = 0;
+  std::cout << result.size() << std::endl;
   
-  for(std::deque<char unsigned>::reverse_iterator rit = result.rbegin(); rit != result.rend(); ++rit) {
-    if(i < 6) {
-      fc ^= (-*rit ^ fc) & (1 << i);
-      i++;
-    }
-    if (i > 5 && j < 6) {
-      kc ^= (-*rit ^ kc) & (1 << j);
-      j++;
-    }
-    if(j > 5 && k < 6) {
-      hc ^= (-*rit ^ hc) & (1 << k);
-      k++;
-    }
+  result = convert_to_binary_string(result);
+
+  std::cout << result.size() << std::endl;
+  for(std::deque<char unsigned>::iterator it = result.begin(); it != result.end(); ++it) {
+    std::cout << static_cast<unsigned>(*it) << std::endl;
   }
 
-  std::cout << "HOUSE_CODE is: " << static_cast<unsigned>(hc) << std::endl;
-  std::cout << "NUMBER CODE is: " << static_cast<unsigned>(kc) << std::endl;
-  std::cout << "FUNCTION_CODE is: " << static_cast<unsigned>(fc) << std::endl;
+  //std::cout << "HOUSE_CODE is: " << static_cast<unsigned>(hc) << std::endl;
+  //std::cout << "NUMBER CODE is: " << static_cast<unsigned>(kc) << std::endl;
+  //std::cout << "FUNCTION_CODE is: " << static_cast<unsigned>(fc) << std::endl;
   
   return 1;
 }
+
