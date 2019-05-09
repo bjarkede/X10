@@ -1,4 +1,5 @@
-#pragma once
+#ifndef _X10_H
+#define _X10_H
 
 #include "X10const.hpp"
 
@@ -29,10 +30,6 @@
 // X10 States
 enum state { IDLE = 0, SENDING = 1, RECEIVING = 2, ERROR = 3 };
 
-// @Incomplete:
-// We also want to send the function code, so we dont have to
-// do two transmissions, one for house and key, and
-// for house and function -bjarke, 8th May 2019.
 struct X10_Code  {
   std::deque<char unsigned> packet;
 
@@ -49,9 +46,6 @@ struct X10_Code  {
 
 struct X10_Controller {
 private:
-  int receiving_pin;
-  int interrupt_pin;
-  
   state X10_state; 
 protected:
 public:
@@ -62,7 +56,6 @@ public:
   
   void transmit_code(X10_Code* code);
   std::tuple<std::deque<char unsigned>, std::deque<char unsigned>> receive_code();
-
   bool idle();
  
   // Garbage
@@ -101,13 +94,11 @@ void decode_manchester_deque(std::deque<char unsigned> &d1) {
   }
 
   d1 = result;
-  
-  return;
 }
 
 // This function takes a double ended queue full of bits, and converts
 // it to a deque that has the house, key, and function code in it.
-std::deque<char unsigned> convert_to_binary_string(std::deque<char unsigned> &d1) {
+void convert_to_binary_string(std::deque<char unsigned> &d1) {
   assert(d1.size() == 14); // We should have a total of 14 bits in this
   
   char unsigned hc;
@@ -137,20 +128,12 @@ std::deque<char unsigned> convert_to_binary_string(std::deque<char unsigned> &d1
   d1.push_back(hc);
   d1.push_back(kc);
   d1.push_back(fc);
-  
-  return d1;
 }
 
-// @Incomplete:
-// We need to specify the output pin for the signal.
-// We don't start the timer yet, because we want to do that exactly when we do
-// the external interrupt on INT0. -bjarke, 2nd Febuary 2019.
 void TIMER0_init() {
   SET_TIMER0_WAVEFORM;
   SET_TIMER0_MASK;
   OCR0A = 65; // See documentation for this value...
-  
-  return;
 }
 
 // We use this timer to create a delay of 1 ms
@@ -160,8 +143,7 @@ void TIMER1_init() {
   ORC1A   = 15999;         // It takes roughly 1 ms to reach this
 }
 
-// @Incomplete:
-// We use TIMER2 to transmit at 300 khz -bjarke, 7th May 2019.
+// We use TIMER2 to transmit at 300 khz.
 void TIMER2_init() {
   SET_TIMER2_WAVEFORM;
   SET_TIMER2_MASK;
@@ -209,3 +191,4 @@ bool split_and_compare_bits(std::deque<char unsigned> &d1) {
   return true;
 }
 
+#endif

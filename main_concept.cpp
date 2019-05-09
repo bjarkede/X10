@@ -14,13 +14,16 @@ int main(int argc, char* argv[]) {
   // Init our X10 Controller for this device
   X10_Controller* controller = new X10_Controller();
 
-  for(;;) {
+  while(1) {
+    if(controller->X10_state == ERROR) {
+      controller->set_state(IDLE);
+      // Now we want to transmit some kind of error code...
+    }
+    
     if(controller->X10_state != IDLE) {
       auto result = controller->receive_code();
-
-      // Act on the received X10_Code...
-      
-    }
+      // Handle the received code...
+    } 
   }
 
   return 0;

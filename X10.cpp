@@ -4,13 +4,10 @@ std::deque<char unsigned> encoded_packet; // This packet is empty unless we are 
 std::deque<char unsigned> lpf_buffer;     // This buffer is loaded with bits received at 120khz.
 std::deque<char unsigned> hpf_buffer;	  // This buffer is loaded with bits received at 300khz.
 
-bool signal_state = true;                // We use this to determine if to send HIGH or LOW in ISR.
+bool signal_state = true;                 // We use this to determine if to send HIGH or LOW in ISR.
 
 state global_state;
 
-// @Incomplete:
-// The X10 protocol is not yet finished, we need to specify which codes
-// that trigger 220 kHz transmission, by default we transmit at 120 kHz. -bjarke, 22nd April 2019.
 void X10_Controller::transmit_code(X10_Code* code) {
   assert(this->X10_state == IDLE);
   this->set_state(SENDING);
@@ -69,7 +66,6 @@ void X10_Controller::transmit_code(X10_Code* code) {
   STOP_TIMER0;
   cli();
 
-
   global_state = IDLE;
   this->set_state(IDLE);
   return;
@@ -104,6 +100,8 @@ std::tuple<std::deque<char unsigned>, std::deque<char unsigned>> X10_Controller:
   // Stop when we have seen the stop code
   STOP_INT0_INTERRUPT;
   STOP_TIMER1;
+  cli();
+  
   // Resize the vectors, to remove the stop-code.
   lpf_buffer.resize(lpf_buffer.size() - 4);
   hpf_buffer.resize(hpf_buffer.size() - 4);
@@ -120,7 +118,7 @@ std::tuple<std::deque<char unsigned>, std::deque<char unsigned>> X10_Controller:
   
   global_state = IDLE;
   this->set_state(IDLE);
-  return std::make_tuple(lpf_buffer, hpf_buffer);
+  return std::make_tuple(convert_to_binary_string(lpf_buffer), convert_to_binary_string(hpf_buffer));
 }
 
 bool X10_Controller::idle() {
@@ -160,6 +158,12 @@ bool X10_Controller::idle() {
   }
 
   if(is_equal_lpf || is_equal_hpf) {
+    STOP_INT0_INTERRUPT;
+    cli();
+    
+    lpf_buffer.clear();
+    hpf_buffer.clear();
+    
     return false; // We received the start-code and need to receive.
   } else { return true; }
 }

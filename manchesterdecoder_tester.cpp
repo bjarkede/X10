@@ -72,6 +72,13 @@ int main() {
   test.push_back(0x0);
   test.push_back(0x1);
 
+  test.push_back(0x0);
+  test.push_back(0x0);
+  test.push_back(0x0);
+  test.push_back(0x0);
+  test.push_back(0x0);
+  test.push_back(0x0);
+
   char unsigned current_bit;
   char unsigned next_bit;
   std::deque<char unsigned> result;
@@ -96,11 +103,11 @@ int main() {
   // Decoding bits work, now we want to make bit-strings
   // so we can compare to our X10 constants. -bjarke, 7th May 2019.
 
-  std::cout << result.size() << std::endl;
+  //  std::cout << result.size() << std::endl;
   
   result = convert_to_binary_string(result);
 
-  std::cout << result.size() << std::endl;
+  //std::cout << result.size() << std::endl;
   for(std::deque<char unsigned>::iterator it = result.begin(); it != result.end(); ++it) {
     std::cout << static_cast<unsigned>(*it) << std::endl;
   }
