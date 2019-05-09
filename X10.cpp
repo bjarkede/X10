@@ -166,17 +166,29 @@ ISR(INT0_vect) {
   if(!encoded_packet.empty() && global_state == SENDING) {
     current_bit = encoded_packet.front();
 
-    // @TODO:
-    // Add functionality to choose between 120/300 KHz transmission
-    // depending on some global state based on previous received X10 commands -bjarke, 22nd April 2019.
-    START_TIMER0;
-    START_TIMER2;
-    
+    START_TIMER0; // 120 kHz transmission.
     START_TIMER1; // This creates an interrupt after 1ms.
 
     while(((TCCR1B >> CS10) & 1) == 1) {}
     
     // On the next interrupt, transmit the next bit, by removing this one.
+    encoded_packet.pop_front();
+  }
+
+  if(!encoded_pakcet.empty() && global_state == ERROR) {
+    // @Incomplete:
+    // If we get an error in transmission, and need to send something back to stop the transmission
+    // We enter this statement, and transmit the messeage at 300 kHz. -bjarke, 9th May 2019.
+    current_bit = encoded_packet.front();
+
+    START_TIMER2; // 300 kHz transmission.
+    START_TIMER1; // Creates an intterupt after 1ms.
+
+    while(((TCCR1B >> CS10) & 1) == 1) {
+      // @TODO:
+      // Implement the sending logic here.
+    }
+
     encoded_packet.pop_front();
   }
 

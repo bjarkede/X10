@@ -55,7 +55,11 @@ private:
   state X10_state; 
 protected:
 public:
-  X10_Controller() { X10_state = IDLE; }
+  X10_Controller() {
+    DDRB = 0B00000001;
+    X10_state = IDLE;
+
+  }
   
   void transmit_code(X10_Code* code);
   X10_Code* receive_code();
