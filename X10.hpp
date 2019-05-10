@@ -32,7 +32,6 @@ enum state { IDLE = 0, SENDING = 1, RECEIVING = 2, ERROR = 3 };
 
 struct X10_Code  {
   std::deque<char unsigned> packet;
-
   X10_Code(char unsigned hc, char unsigned nc, char unsigned fc)
   {
     // We push it two times, because we need to send it twice.

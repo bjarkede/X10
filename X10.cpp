@@ -51,6 +51,7 @@ void X10_Controller::transmit_code(X10_Code* code) {
   // Start the external interrupt/TIMER0 now that we have parsed the bits.
   INT0_init();
   TIMER0_init();
+  TIMER2_init();
   TIMER1_init(); // Used for 1ms delays
   sei();
 
@@ -154,7 +155,6 @@ bool X10_Controller::idle() {
       is_equal_lpf = std::equal(compare_deque.begin(), compare_deque.end(), lpf_buffer.begin());
       is_equal_hpf = std::equal(compare_deque.begin(), compare_deque.end(), hpf_buffer.begin());
     }
-
   }
 
   if(is_equal_lpf || is_equal_hpf) {
@@ -233,6 +233,9 @@ ISR(TIMER1_COMPA_vect) {
   STOP_TIMER1; // Stop TIMER1, since 1 ms has passed.
   STOP_TIMER0; // Likewise stop TIMER0, since we no longer want to transmit the bit.
   STOP_TIMER2; // Stop this as well if we are sending at 220 KHz.
+
+  // There are some things we want to make sure are stopped here..
+  PORTB |= 0 << 0;
 }
 
 ISR(TIMER0_COMPA_vect) {
