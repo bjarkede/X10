@@ -2,7 +2,7 @@
 #define _BDEQUE_H
 
 typedef struct bdeque bdeque_typeann;
-typedef char unsigned bdeque_val_typeann;
+typedef int bdeque_val_typeann;
 
 bdeque_typeann * bdeque_alloc(); // Creates a new bdeque_type, returns pointer to memory
 void bdeque_free(bdeque_typeann *d); // Free memory
