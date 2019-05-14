@@ -4,11 +4,14 @@
 #include "X10const.hpp"
 
 #include <iostream>
-#include <deque>
+#include <deque> // @Incomplete: We dont want to use this anymore, we use bdeque.
+#include <tuple>
 #include <cassert>
 
-#include <avr/io.h>
-#include <avr/interrupt.h>
+//#include "bdeque.hpp"
+
+//#include <avr/io.h>
+//#include <avr/interrupt.h>
 
 #define SET_TIMER0_WAVEFORM TCCR0A |= (1<<WGM01)
 #define SET_TIMER0_MASK TIMSK0 |= (1<<OCIE0A)
@@ -32,6 +35,7 @@ enum state { IDLE = 0, SENDING = 1, RECEIVING = 2, ERROR = 3 };
 
 struct X10_Code  {
   std::deque<char unsigned> packet;
+  
   X10_Code(char unsigned hc, char unsigned nc, char unsigned fc)
   {
     // We push it two times, because we need to send it twice.
@@ -69,7 +73,7 @@ public:
 
 // This function takes a deque of manchester encoded bits and converts
 // it to a deque of non-encoded bits.
-void decode_manchester_deque(std::deque<char unsigned> &d1) {
+std::deque<char unsigned> decode_manchester_deque(std::deque<char unsigned> d1) {
   
   char unsigned current_bit;
   char unsigned next_bit;
@@ -93,11 +97,12 @@ void decode_manchester_deque(std::deque<char unsigned> &d1) {
   }
 
   d1 = result;
+  return d1;
 }
 
 // This function takes a double ended queue full of bits, and converts
 // it to a deque that has the house, key, and function code in it.
-void convert_to_binary_string(std::deque<char unsigned> &d1) {
+std::deque<char unsigned> convert_to_binary_string(std::deque<char unsigned> d1) {
   char unsigned hc;
   char unsigned kc;
   char unsigned fc;
@@ -125,6 +130,8 @@ void convert_to_binary_string(std::deque<char unsigned> &d1) {
   d1.push_back(hc);
   d1.push_back(kc);
   d1.push_back(fc);
+
+  return d1;
 }
 
 void TIMER0_init() {
@@ -175,8 +182,8 @@ bool compare_to_stop_code(std::deque<char unsigned>  &d1, std::deque<char unsign
 return true;
 }
 
-bool split_and_compare_bits(std::deque<char unsigned> &d1) {
-  std::vector<char unsigned> d2(
+bool split_and_compare_bits(std::deque<char unsigned> d1) {
+  std::deque<char unsigned> d2(
 		    std::make_move_iterator(d1.begin() + d1.size()/2),
 		    std::make_move_iterator(d1.end()));
   d1.erase(d1.begin() + d1.size()/2, d1.end());

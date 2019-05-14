@@ -15,15 +15,7 @@ int main(int argc, char* argv[]) {
   X10_Controller* controller = new X10_Controller();
 
   while(1) {
-    if(controller->X10_state == ERROR) {
-      controller->set_state(IDLE);
-      // Now we want to transmit some kind of error code...
-    }
-    
-    if(controller->X10_state != IDLE) {
-      auto result = controller->receive_code();
-      // Handle the received code...
-    } 
+
   }
 
   return 0;

@@ -72,7 +72,7 @@ void X10_Controller::transmit_code(X10_Code* code) {
   return;
 }
 
-std::tuple<std::deque<char unsigned>, std::deque<char unsigned>> X10_Controller::receive_code() {
+std::tuple<std::deque<char unsigned>, std::deque<char unsigned> > X10_Controller::receive_code() {
   assert(this->X10_state == IDLE);
   this->set_state(RECEIVING);
   global_state = RECEIVING;
