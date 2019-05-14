@@ -66,7 +66,7 @@ bdeque_val_typeann bdeque_pop_front(bdeque_typeann *d) {
   } else {
     d->head = n->next;
   }
-  free(n);
+  delete n;
   return v;
 }
 
@@ -78,7 +78,7 @@ bdeque_val_typeann bdeque_pop_back(bdeque_typeann *d) {
   } else {
     d->tail = n->prev;
   }
-  free(n);
+  delete n;
   return v;
 }
 
