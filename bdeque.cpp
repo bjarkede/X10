@@ -1,7 +1,5 @@
 #include "bdeque.hpp"
-#include "stdlib.h"
 #include "X10const.hpp"
-#include <iostream>
 
 // A node in our datastructure is described like this
 // It points to the next and previous elements and
@@ -102,82 +100,4 @@ int bdeque_size(bdeque_type *d) {
   }
 
   return i;
-}
-
-struct X10_Code {
-  bdeque_type *packet;
-  
-  X10_Code(char unsigned hc, char unsigned nc, char unsigned fc)
-  {
-    packet = bdeque_alloc();
-    for(int i = 0; i < 2; ++i) {
-      bdeque_push_back(packet, hc);
-      bdeque_push_back(packet, nc);
-      bdeque_push_back(packet, fc);
-    }
-  }
-
-  ~X10_Code() { bdeque_free(packet); }
-  
-};
-
-int amount_of_bits(int n) {
-  int result = 0;
-  
-  if(n == 6 || n == 3) {
-    result = 3;
-  } else {
-    result = 4;
-  }
-
-  return result;
-}
-
-bdeque_type *encoded_packet = bdeque_alloc();
-
-int main() {
-
-  X10_Code* test = new X10_Code(HOUSE_A, KEY_1, ON);
-
-  if(bdeque_is_empty(test->packet)) {
-    std::cout << "We are empty!" << std::endl;
-  } else {
-    std::cout << "We are not empty!" << std::endl;
-    std::cout << "Our size is: " << bdeque_size(test->packet) << std::endl;
-  }
-
-  // Test the transmit_code on our new datastructure
-  bool continous_flag = false;
-  char unsigned current_bit;
-
-  bdeque_push_back(encoded_packet, 0x0);
-  bdeque_push_back(encoded_packet, 0x1);
-  bdeque_push_back(encoded_packet, 0x1);
-  bdeque_push_back(encoded_packet, 0x1);
-
-  while(!bdeque_is_empty(test->packet)) {
-    if(!continous_flag && bdeque_size(test->packet) == 3) {
-      for(int i = 0; i < 6; ++i) {
-	bdeque_push_back(encoded_packet, 0x0);
-      }
-    }
-
-    for(int i = amount_of_bits(bdeque_size(test->packet)); i >= 0 ; --i) {
-      if(bdeque_peek_front(test->packet) == BRIGHT || bdeque_peek_front(test->packet) == DIM) { continous_flag = true; }
-
-      current_bit = (bdeque_peek_front(test->packet) >> i) & 0x1;
-      bdeque_push_back(encoded_packet, current_bit);
-      bdeque_push_back(encoded_packet, current_bit^1);
-    }
-
-    bdeque_pop_front(test->packet);
-  }
-
-  bdeque_push_back(encoded_packet, 0x1);
-  bdeque_push_back(encoded_packet, 0x1);
-  bdeque_push_back(encoded_packet, 0x1);
-  bdeque_push_back(encoded_packet, 0x0);
-
-  
-  return 1;
 }

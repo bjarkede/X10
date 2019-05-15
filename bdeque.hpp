@@ -2,7 +2,7 @@
 #define _BDEQUE_H
 
 #include <stdlib.h>
-#include <cassert>
+//#include <cassert>
 
 typedef struct bdeque bdeque_type;
 typedef char unsigned bdeque_valtype;

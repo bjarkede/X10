@@ -12,8 +12,11 @@
 int main(int argc, char* argv[]) {
 
   // Init our X10 Controller for this device
-  X10_Controller* controller = new X10_Controller();
+  X10_Controller *controller = new X10_Controller();
+  X10_Code *code = new X10_Code(HOUSE_A, KEY_2, ON);
 
+  controller->transmit_code(code);
+  
   while(1) {
 
   }

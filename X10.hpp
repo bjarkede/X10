@@ -3,10 +3,10 @@
 
 #include "X10const.hpp"
 
-#include <iostream>
-#include <deque> // @Incomplete: We dont want to use this anymore, we use bdeque.
-#include <tuple>
-#include <cassert>
+//#include <iostream>
+//#include <deque> // @Incomplete: We dont want to use this anymore, we use bdeque.
+//#include <tuple>
+//#include <cassert>
 
 #include "bdeque.hpp"
 
@@ -61,7 +61,7 @@ public:
   }
   
   void transmit_code(X10_Code* code);
-  std::tuple<std::deque<char unsigned>, std::deque<char unsigned>> receive_code();
+  //std::tuple<std::deque<char unsigned>, std::deque<char unsigned>> receive_code();
   bool idle();
  
   // Garbage
@@ -74,68 +74,10 @@ public:
 
 };
 
-// This function takes a deque of manchester encoded bits and converts
-// it to a deque of non-encoded bits.
-std::deque<char unsigned> decode_manchester_deque(std::deque<char unsigned> d1) {
-  
-  char unsigned current_bit;
-  char unsigned next_bit;
-  std::deque<char unsigned> result;
-
-  while(!d1.empty()) {
-    current_bit = d1.front();
-    d1.pop_front();
-    next_bit = d1.front();
-    d1.pop_front();
-
-    if(current_bit == 0x1) {
-      if(next_bit == 0x0) {
-	result.push_back(0x1);
-      }
-    } else if (current_bit == 0x0) {
-      if(next_bit == 0x1) {
-	result.push_back(0x0);
-      }
-    }
-  }
-
-  d1 = result;
-  return d1;
-}
-
-// This function takes a double ended queue full of bits, and converts
-// it to a deque that has the house, key, and function code in it.
-std::deque<char unsigned> convert_to_binary_string(std::deque<char unsigned> d1) {
-  char unsigned hc;
-  char unsigned kc;
-  char unsigned fc;
-
-  int i = 0;
-  int j = 0;
-  int k = 0;
-  
-  for(std::deque<char unsigned>::reverse_iterator rit = d1.rbegin(); rit != d1.rend(); ++rit) {
-    if(i < 6) {
-      fc ^= (-*rit ^ fc) & (1 << i);
-      i++;
-    }
-    if (i > 5 && j < 6) {
-      kc ^= (-*rit ^ kc) & (1 << j);
-      j++;
-    }
-    if(j > 5 && k < 6) {
-      hc ^= (-*rit ^ hc) & (1 << k);
-      k++;
-    }
-  }
-
-  d1.clear();
-  d1.push_back(hc);
-  d1.push_back(kc);
-  d1.push_back(fc);
-
-  return d1;
-}
+bdeque_type* decode_manchester_deque(bdeque_type *d);
+bdeque_type * convert_to_binary_string(bdeque_type *d);
+bool compare_to_stop_code(bdeque_type *d);
+bool split_and_compare_bits(bdeque_type *d);
 
 void TIMER0_init() {
   SET_TIMER0_WAVEFORM;

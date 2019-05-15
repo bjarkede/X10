@@ -9,7 +9,6 @@ bool signal_state = true;                 // We use this to determine if to send
 state global_state;
 
 void X10_Controller::transmit_code(X10_Code* code) {
-  assert(this->X10_state == IDLE);
   this->set_state(SENDING);
   global_state = SENDING;
 
@@ -73,8 +72,7 @@ void X10_Controller::transmit_code(X10_Code* code) {
   return;
 }
 
-std::tuple<std::deque<char unsigned>, std::deque<char unsigned> > X10_Controller::receive_code() {
-  assert(this->X10_state == IDLE);
+/*std::tuple<std::deque<char unsigned>, std::deque<char unsigned> > X10_Controller::receive_code() {
   this->set_state(RECEIVING);
   global_state = RECEIVING;
 
@@ -111,7 +109,7 @@ std::tuple<std::deque<char unsigned>, std::deque<char unsigned> > X10_Controller
   if(!split_and_compare_bits(decode_manchester_deque(lpf_buffer))) {
     // @Incomplete:
     // The two messages are not equal to eachother, we
-    // need to handle this somehow, and send a messeage back that we got an error. -bjarke 9th May 2019.
+    // need to handle this somehow, and send a messeage back that we got an error. -bjarke, 9th May 2019.
   }
   
   if(!split_and_compare_bits(decode_manchester_deque(hpf_buffer))) {
@@ -121,14 +119,14 @@ std::tuple<std::deque<char unsigned>, std::deque<char unsigned> > X10_Controller
   global_state = IDLE;
   this->set_state(IDLE);
   return std::make_tuple(convert_to_binary_string(lpf_buffer), convert_to_binary_string(hpf_buffer));
-}
+  }*/
 
-bool X10_Controller::idle() {
-  assert(this->X10_state == IDLE);
-  assert(lpf_buffer.empty());
-  assert(hpf_buffer.empty());
+/*bool X10_Controller::idle() {
   this->set_state(IDLE);
   global_state = IDLE;
+
+  // @TODO:
+  // We might want to make sure that the buffers are empty when we enter idle. -bjarke, 15th May 2019.
 
   INT0_init();
   sei();
@@ -167,6 +165,73 @@ bool X10_Controller::idle() {
     
     return false; // We received the start-code and need to receive.
   } else { return true; }
+  }*/
+
+/*bdeque_type * decode_manchester_deque(bdeque_type *d) {
+  char unsigned current_bit;
+  char unsigned next_bit;
+  bdeque_type *result = bdeque_alloc();
+
+  while(!bdeque_is_empty(d1)) {
+    current_bit = bdeque_pop_front(d1);
+    next_bit = bdeque_pop_front(d1);
+
+    if(current_bit == 0x1) {
+      if(next_bit == 0x0) {
+	bdeque_push_back(result, 0x1);
+      }
+    } else if (current_bit == 0x0) {
+      if(next_bit == 0x1) {
+	bdeque_push_back(result, 0x0);
+      }
+    }
+  }
+
+  bdeque_free(d1);
+  return result;
+  }*/
+
+/*bdeque_type * convert_to_binary_string(bdeque_type *d) {
+
+  char unsigned hc;
+  char unsigned kc;
+  char unsigned fc;
+
+  bdeque_type *result = bdeque_alloc();
+  
+  int i = 0;
+  int j = 0;
+  int k = 0;
+  
+  struct node *n = result->head;
+  
+  //for(std::deque<char unsigned>::reverse_iterator rit = d1.rbegin(); rit != d1.rend(); ++rit) {
+  while(n != d1->tail) {  
+    if(i < 6) {
+      fc ^= (-n->val ^ fc) & (1 << i);
+      i++;
+    }
+    if (i > 5 && j < 6) {
+      kc ^= (-n->val ^ kc) & (1 << j);
+      j++;
+    }
+    if(j > 5 && k < 6) {
+      hc ^= (-n->val ^ hc) & (1 << k);
+      k++;
+    }
+    
+    n = n->next;
+  }
+  
+  bdeque_free(d1);
+  bdeque_push_back(result, hc);
+  bdeque_push_back(result, kc);
+  bdeque_push_back(result, fc);
+  
+  return result;
+  }*/
+
+bool compare_to_stop_code(bdeque_type *d1, bdeque_type *d2) {
 }
 
 ISR(INT0_vect) {
