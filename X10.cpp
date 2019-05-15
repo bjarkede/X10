@@ -8,6 +8,29 @@ bool signal_state = true;                 // We use this to determine if to send
 
 state global_state;
 
+X10_Controller::X10_Controller() {
+	DDRB = 0B11111110;
+	DDRD = 0B11111111;
+	X10_state = IDLE;
+}
+
+state X10_Controller::get_state(X10_Controller* controller) const {
+	return this->X10_state;
+}
+
+void X10_Controller::set_state(state new_state) {
+	this->X10_state = new_state;
+}
+
+void X10_Code::construct_packet(char unsigned hc, char unsigned nc, char unsigned fc) {
+	packet = bdeque_alloc();
+	for(int i = 0; i < 2; ++i) {
+		bdeque_push_back(packet, hc);
+		bdeque_push_back(packet, nc);
+		bdeque_push_back(packet, fc);
+	}
+}
+
 void X10_Controller::transmit_code(X10_Code* code) {
   this->set_state(SENDING);
   global_state = SENDING;
@@ -65,7 +88,6 @@ void X10_Controller::transmit_code(X10_Code* code) {
   STOP_INT0_INTERRUPT;
   STOP_TIMER0;
   cli();
-  delete(code);
 
   global_state = IDLE;
   this->set_state(IDLE);
@@ -231,21 +253,25 @@ void X10_Controller::transmit_code(X10_Code* code) {
   return result;
   }*/
 
-bool compare_to_stop_code(bdeque_type *d1, bdeque_type *d2) {
-}
+/*bool compare_to_stop_code(bdeque_type *d1, bdeque_type *d2) {
+}*/
 
 ISR(INT0_vect) {
+  char unsigned current_bit;		
+		
+  PORTB |= 1 << 1;		
+		
   if(!bdeque_is_empty(encoded_packet) && global_state == SENDING) {
     current_bit = bdeque_peek_front(encoded_packet);
 
     START_TIMER1; // This creates an interrupt after 1ms.
-
-    while(((TCCR1B >> CS10) & 1) == 1) {
-      if(current_bit == 0x1) {
-	START_TIMER0;
-      }
+   
+    if(current_bit == 0x1) {
+		PORTB |= 1 << 2;
+		START_TIMER0;
+		PORTB |= 1 << 3;
     }
-    
+   
     // On the next interrupt, transmit the next bit, by removing this one.
     bdeque_pop_front(encoded_packet);
   }
@@ -259,7 +285,7 @@ ISR(INT0_vect) {
     START_TIMER1; // Creates an intterupt after 1ms.
 
     while(((TCCR1B >> CS10) & 1) == 1) {
-      if(current_bit = 0x1) {
+      if(current_bit == 0x1) {
 	START_TIMER2;
       }
     }
@@ -267,7 +293,7 @@ ISR(INT0_vect) {
     bdeque_pop_front(encoded_packet);
   }
 
-  if(global_state = RECEIVING) {
+  if(global_state == RECEIVING) {
 
     START_TIMER1;
 
@@ -277,7 +303,7 @@ ISR(INT0_vect) {
     while(((TCCR1B >> CS10) & 1) == 1) {
       // If some port goes HIGH, load either the lpf or hpf buffer.
       if(((PINB >> 1) & 1) == 1) { // If there is a 1 on this PIN, load 1 into LPF.
-	bdeque_push_back(lpf_buffer, 0x1);
+		bdeque_push_back(lpf_buffer, 0x1);
       }
       if(((PINB >> 2) & 1) == 1) { // If there is a 1 on this PIN, load 1 into HPF.
         bdeque_push_back(hpf_buffer, 0x1);
@@ -301,16 +327,17 @@ ISR(TIMER1_COMPA_vect) {
   STOP_TIMER2; // Stop this as well if we are sending at 220 KHz.
 
   // There are some things we want to make sure are stopped here..
-  PORTB |= 0 << 0;
+  PORTB &= ~1 << 0;
 }
 
 ISR(TIMER0_COMPA_vect) {
+  PORTB |= 1 << 4;
   if(signal_state) {
     signal_state = false; 
     PORTB |= 1 << 0;
   } else {
     signal_state = true;
-    PORTB |= 0 << 0;
+    PORTB &= ~1 << 0;
   }
 }
 
@@ -320,8 +347,41 @@ ISR(TIMER2_COMPA_vect) {
     PORTB |= 1 << 0;
   } else {
     signal_state = true;
-    PORTB |= 0 << 0;
+    PORTB &= ~1 << 0;
   }
 }
 
+void TIMER0_init() {
+	  SET_TIMER0_WAVEFORM;
+	  SET_TIMER0_MASK;
+	  OCR0A = 65; // See documentation for this value...
+}
 
+void TIMER1_init() {
+	  TCCR1B |= (1 << WGM12);  // Set CTC Mode
+	  TIMSK1 |= (1 << OCIE1A); // Interrupt enable
+	  OCR1A   = 15999;         // It takes roughly 1 ms to reach this
+}
+
+void TIMER2_init() {
+	SET_TIMER2_WAVEFORM;
+	SET_TIMER2_MASK;
+	OCR2A = 27; // 16 MHz / (2 * prescaler (1) * desired_frequency) = 26.67
+}
+
+void INT0_init() {
+	SET_INT0_SENSE_CONTROL;
+	START_INT0_INTERRUPT;
+}
+
+int amount_of_bits(int n) {
+	int result = 0;
+	
+	if(n == 6 || n == 3) {
+		result = 3;
+		} else {
+		result = 4;
+	}
+
+	return result;
+}

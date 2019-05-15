@@ -1,5 +1,4 @@
-#ifndef _BDEQUE_H
-#define _BDEQUE_H
+#pragma once
 
 #include <stdlib.h>
 //#include <cassert>
@@ -27,4 +26,3 @@ bdeque_valtype bdeque_pop_back(bdeque_type *d);
 bdeque_valtype bdeque_peek_front(bdeque_type *d);
 bdeque_valtype bdeque_peek_back(bdeque_type *d);
 
-#endif
