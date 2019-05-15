@@ -1,8 +1,8 @@
 #include "X10.hpp"
 
-std::deque<char unsigned> encoded_packet; // This packet is empty unless we are sending an X10 Command.
-std::deque<char unsigned> lpf_buffer;     // This buffer is loaded with bits received at 120khz.
-std::deque<char unsigned> hpf_buffer;	  // This buffer is loaded with bits received at 300khz.
+bdeque_type *encoded_packet = bdeque_alloc(); // This packet is empty unless we are sending an X10 Command.
+bdeque_type *lpf_buffer     = bdeque_alloc();     // This buffer is loaded with bits received at 120khz.
+bdeque_type *hpf_buffer     = bdeque_alloc();	  // This buffer is loaded with bits received at 300khz.
 
 bool signal_state = true;                 // We use this to determine if to send HIGH or LOW in ISR.
 
@@ -17,36 +17,36 @@ void X10_Controller::transmit_code(X10_Code* code) {
   char unsigned current_bit;
 
   // Push our start code to the encoded_packet.
-  encoded_packet.push_back(0x0);
-  encoded_packet.push_back(0x1);
-  encoded_packet.push_back(0x1);
-  encoded_packet.push_back(0x1);
+  bdeque_push_back(encoded_packet, 0x0);
+  bdeque_push_back(encoded_packet, 0x1);
+  bdeque_push_back(encoded_packet, 0x1);
+  bdeque_push_back(encoded_packet, 0x1);
  
   // Encode our X10_Scheme to manchester.
-  while(!code->packet.empty()) {
-    if(!continous_flag && code->packet.size() == 3) {
+  while(!bdeque_is_empty(code->packet)) {
+    if(!continous_flag && bdeque_size(code->packet) == 3) {
       for(int i = 0; i < 6; ++i) {
-	encoded_packet.push_back(0x0);
+	bdeque_push_back(encoded_packet, 0x0);
       }
     }
-
-    for(int i = 0; i < amount_of_bits(code->packet.size()); ++i) { 
-      if(code->packet.front() == BRIGHT || code->packet.front() == DIM)	{ continous_flag = true; }
-
-      current_bit = (code->packet.front() & (1 << i)) != 0;
-
-      encoded_packet.push_back(current_bit);
-      encoded_packet.push_back(current_bit^1);
+    
+    for(int i = amount_of_bits(bdeque_size(code->packet)); i >= 0 ; --i) {
+      if(bdeque_peek_front(code->packet) == BRIGHT || bdeque_peek_front(code->packet) == DIM) { continous_flag = true; }
+      
+      current_bit = (bdeque_peek_front(code->packet) >> i) & 0x1;
+      bdeque_push_back(encoded_packet, current_bit);
+      bdeque_push_back(encoded_packet, current_bit^1);
     }
-
-    code->packet.pop_front(); // Move onto the next instruction
+    
+    bdeque_pop_front(code->packet); // Move onto next instruction
   }
 
+  
   // Add the STOP_CODE to our encoded_packet..
-  encoded_packet.push_back(0x1);
-  encoded_packet.push_back(0x1);
-  encoded_packet.push_back(0x1);
-  encoded_packet.push_back(0x0);
+  bdeque_push_back(encoded_packet, 0x1);
+  bdeque_push_back(encoded_packet, 0x1);
+  bdeque_push_back(encoded_packet, 0x1);
+  bdeque_push_back(encoded_packet, 0x0);
   
   // Start the external interrupt/TIMER0 now that we have parsed the bits.
   INT0_init();
@@ -58,7 +58,7 @@ void X10_Controller::transmit_code(X10_Code* code) {
   START_INT0_INTERRUPT;
   
   // Then wait until the global packet is empty...
-  while(!encoded_packet.empty()) {
+  while(!bdeque_is_empty(encoded_packet)) {
     // Do nothing.
   }
 
@@ -66,6 +66,7 @@ void X10_Controller::transmit_code(X10_Code* code) {
   STOP_INT0_INTERRUPT;
   STOP_TIMER0;
   cli();
+  delete(code);
 
   global_state = IDLE;
   this->set_state(IDLE);
@@ -169,8 +170,8 @@ bool X10_Controller::idle() {
 }
 
 ISR(INT0_vect) {
-  if(!encoded_packet.empty() && global_state == SENDING) {
-    current_bit = encoded_packet.front();
+  if(!bdeque_is_empty(encoded_packet) && global_state == SENDING) {
+    current_bit = bdeque_peek_front(encoded_packet);
 
     START_TIMER1; // This creates an interrupt after 1ms.
 
@@ -181,14 +182,14 @@ ISR(INT0_vect) {
     }
     
     // On the next interrupt, transmit the next bit, by removing this one.
-    encoded_packet.pop_front();
+    bdeque_pop_front(encoded_packet);
   }
 
-  if(!encoded_pakcet.empty() && global_state == ERROR) {
+  if(!bdeque_is_empty(encoded_packet) && global_state == ERROR) {
     // @Incomplete:
     // If we get an error in transmission, and need to send something back to stop the transmission
     // We enter this statement, and transmit the messeage at 300 kHz. -bjarke, 9th May 2019.
-    current_bit = encoded_packet.front();
+    current_bit = bdeque_peek_front(encoded_packet);
 
     START_TIMER1; // Creates an intterupt after 1ms.
 
@@ -198,7 +199,7 @@ ISR(INT0_vect) {
       }
     }
 
-    encoded_packet.pop_front();
+    bdeque_pop_front(encoded_packet);
   }
 
   if(global_state = RECEIVING) {

@@ -124,10 +124,10 @@ struct X10_Code {
 int amount_of_bits(int n) {
   int result = 0;
   
-  if(n == 6 || n == 5 || n == 3 || n == 2) {
-    result = 4;
+  if(n == 6 || n == 3) {
+    result = 3;
   } else {
-    result = 5;
+    result = 4;
   }
 
   return result;
@@ -137,7 +137,7 @@ bdeque_type *encoded_packet = bdeque_alloc();
 
 int main() {
 
-  X10_Code* test = new X10_Code(0B0110, 0B11100, 0B01011);
+  X10_Code* test = new X10_Code(HOUSE_A, KEY_1, ON);
 
   if(bdeque_is_empty(test->packet)) {
     std::cout << "We are empty!" << std::endl;
@@ -162,10 +162,10 @@ int main() {
       }
     }
 
-    for(int i = 0; i < amount_of_bits(bdeque_size(test->packet)); ++i) {
+    for(int i = amount_of_bits(bdeque_size(test->packet)); i >= 0 ; --i) {
       if(bdeque_peek_front(test->packet) == BRIGHT || bdeque_peek_front(test->packet) == DIM) { continous_flag = true; }
 
-      current_bit = (bdeque_peek_front(test->packet) & (i << i)) != 0;
+      current_bit = (bdeque_peek_front(test->packet) >> i) & 0x1;
       bdeque_push_back(encoded_packet, current_bit);
       bdeque_push_back(encoded_packet, current_bit^1);
     }
@@ -178,13 +178,6 @@ int main() {
   bdeque_push_back(encoded_packet, 0x1);
   bdeque_push_back(encoded_packet, 0x0);
 
-  struct node *n = encoded_packet->head;
-  while(n != encoded_packet->tail) {
-    std::cout << static_cast<int>(n->val);
-    n = n->next;
-  }
-
-  std::cout << static_cast<int>(encoded_packet->tail->val);
   
   return 1;
 }

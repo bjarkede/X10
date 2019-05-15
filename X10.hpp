@@ -8,7 +8,7 @@
 #include <tuple>
 #include <cassert>
 
-//#include "bdeque.hpp"
+#include "bdeque.hpp"
 
 //#include <avr/io.h>
 //#include <avr/interrupt.h>
@@ -33,18 +33,21 @@
 // X10 States
 enum state { IDLE = 0, SENDING = 1, RECEIVING = 2, ERROR = 3 };
 
-struct X10_Code  {
-  std::deque<char unsigned> packet;
+struct X10_Code {
+  bdeque_type *packet;
   
   X10_Code(char unsigned hc, char unsigned nc, char unsigned fc)
   {
-    // We push it two times, because we need to send it twice.
+    packet = bdeque_alloc();
     for(int i = 0; i < 2; ++i) {
-      packet.push_back(hc);
-      packet.push_back(nc);
-      packet.push_back(fc);
+      bdeque_push_back(packet, hc);
+      bdeque_push_back(packet, nc);
+      bdeque_push_back(packet, fc);
     }
   }
+
+  ~X10_Code() { bdeque_free(packet); }
+  
 };
 
 struct X10_Controller {
@@ -165,16 +168,16 @@ void INT0_init() {
 int amount_of_bits(int n) {
   int result = 0;
   
-  if(n == 6 || n == 5 || n == 3 || n == 2) {
-    result = 4;
+  if(n == 6 || n == 3) {
+    result = 3;
   } else {
-    result = 5;
+    result = 4;
   }
 
   return result;
 }
 
-bool compare_to_stop_code(std::deque<char unsigned>  &d1, std::deque<char unsigned> &d2) {
+/*bool compare_to_stop_code(std::deque<char unsigned>  &d1, std::deque<char unsigned> &d2) {
   for(int i = d2.size(); i >= 1; i--) {
     if (d1[d1.size()-i] != d2[d2.size()-i]) { return false; }
   }
@@ -193,6 +196,6 @@ bool split_and_compare_bits(std::deque<char unsigned> d1) {
   }
 
   return true;
-}
+  }*/
 
 #endif
