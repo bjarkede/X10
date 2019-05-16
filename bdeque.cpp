@@ -1,20 +1,6 @@
 #include "bdeque.hpp"
 #include "X10const.hpp"
 
-// A node in our datastructure is described like this
-// It points to the next and previous elements and
-// contains the value val.
-struct node {
-  struct node *next;
-  struct node *prev;
-  bdeque_valtype val;
-};
-
-// Our double ended queue has a pointer to the head and tail element.
-struct bdeque {
-  struct node *head;
-  struct node *tail;
-};
 
 bdeque_type * bdeque_alloc() {
   bdeque_type *d = (bdeque_type *)malloc(sizeof(bdeque_type));
@@ -30,6 +16,12 @@ void bdeque_free(bdeque_type *d) {
 
 bool bdeque_is_empty(bdeque_type *d) {
   return d->head == NULL;
+}
+
+void bdeque_resize(bdeque_type *d, int v) {
+	for(int i = 0; i < v; i++) {
+		bdeque_pop_back(d);
+	}
 }
 
 void bdeque_push_front(bdeque_type *d, bdeque_valtype v) {

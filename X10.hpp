@@ -39,7 +39,7 @@ public:
   X10_Controller();
   
   void transmit_code(X10_Code* code);
-  //std::tuple<std::deque<char unsigned>, std::deque<char unsigned>> receive_code();
+  bdeque_type* receive_code();
   bool idle();
  
   // Garbage
@@ -48,8 +48,8 @@ public:
 };
 
 bdeque_type* decode_manchester_deque(bdeque_type *d);
-bdeque_type * convert_to_binary_string(bdeque_type *d);
-bool compare_to_stop_code(bdeque_type *d);
+bdeque_type* convert_to_binary_string(bdeque_type *d);
+bool compare_to_stop_code(bdeque_type *d1, bdeque_type *d2);
 bool split_and_compare_bits(bdeque_type *d);
 
 void TIMER0_init();

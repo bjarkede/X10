@@ -5,6 +5,8 @@ bdeque_type *lpf_buffer     = bdeque_alloc();     // This buffer is loaded with 
 bdeque_type *hpf_buffer     = bdeque_alloc();	  // This buffer is loaded with bits received at 300khz.
 
 bool signal_state = true;                 // We use this to determine if to send HIGH or LOW in ISR.
+int lpf_prev_size = 0;
+int hpf_prev_size = 0;
 
 state global_state;
 
@@ -88,13 +90,15 @@ void X10_Controller::transmit_code(X10_Code* code) {
   STOP_INT0_INTERRUPT;
   STOP_TIMER0;
   cli();
+  
+  PORTB |= 1 << 5;
 
   global_state = IDLE;
   this->set_state(IDLE);
   return;
 }
 
-/*std::tuple<std::deque<char unsigned>, std::deque<char unsigned> > X10_Controller::receive_code() {
+bdeque_type* X10_Controller::receive_code() {
   this->set_state(RECEIVING);
   global_state = RECEIVING;
 
@@ -107,17 +111,19 @@ void X10_Controller::transmit_code(X10_Code* code) {
 
   // We need to check if the last four bits of one of the buffers
   // is equal to the stop_code.
-  std::deque<char unsigned> compare_deque;
-  compare_deque.push_back(0x1);
-  compare_deque.push_back(0x1);
-  compare_deque.push_back(0x1);
-  compare_deque.push_back(0x0);
+  bdeque_type *compare_deque = bdeque_alloc();
+  bdeque_push_back(compare_deque, 0x1);
+  bdeque_push_back(compare_deque, 0x1);
+  bdeque_push_back(compare_deque, 0x1);
+  bdeque_push_back(compare_deque, 0x0);
   
   bool is_equal_stop = false;
   
   while(!is_equal_stop) {
     is_equal_stop = compare_to_stop_code(lpf_buffer, compare_deque);
   }
+  
+  free(compare_deque); // Free this memory
 
   // Stop when we have seen the stop code
   STOP_INT0_INTERRUPT;
@@ -125,9 +131,11 @@ void X10_Controller::transmit_code(X10_Code* code) {
   cli();
   
   // Resize the vectors, to remove the stop-code.
-  lpf_buffer.resize(lpf_buffer.size() - 4);
-  hpf_buffer.resize(hpf_buffer.size() - 4);
+  bdeque_resize(lpf_buffer, bdeque_size(lpf_buffer) - 4);
+  bdeque_resize(hpf_buffer, bdeque_size(hpf_buffer) - 4);
 
+  // @TODO:
+  // We need to implement the functions used below to our new datastructure -bjarke, 16th May 2019.
   if(!split_and_compare_bits(decode_manchester_deque(lpf_buffer))) {
     // @Incomplete:
     // The two messages are not equal to eachother, we
@@ -140,8 +148,8 @@ void X10_Controller::transmit_code(X10_Code* code) {
   
   global_state = IDLE;
   this->set_state(IDLE);
-  return std::make_tuple(convert_to_binary_string(lpf_buffer), convert_to_binary_string(hpf_buffer));
-  }*/
+  return hpf_buffer; // @TODO return the right thing
+  }
 
 /*bool X10_Controller::idle() {
   this->set_state(IDLE);
@@ -253,13 +261,27 @@ void X10_Controller::transmit_code(X10_Code* code) {
   return result;
   }*/
 
-/*bool compare_to_stop_code(bdeque_type *d1, bdeque_type *d2) {
-}*/
+bool compare_to_stop_code(bdeque_type *d1, bdeque_type *d2) {
+	struct node *n1 = d1->tail;
+	struct node *n2 = d2->tail;
+	for(int i = 0; i < 4; i++) {
+		if(n1->val != n2->val) {
+			free(n1);
+			free(n2);
+			return false;
+		}
+		n1 = n1->prev;
+		n2 = n2->prev;
+	}
+	free(n1);
+	free(n2);
+	return true;
+}
 
 ISR(INT0_vect) {
   char unsigned current_bit;		
 		
-  PORTB |= 1 << 1;		
+  //PORTB |= 1 << 1;		
 		
   if(!bdeque_is_empty(encoded_packet) && global_state == SENDING) {
     current_bit = bdeque_peek_front(encoded_packet);
@@ -269,20 +291,22 @@ ISR(INT0_vect) {
     if(current_bit == 0x1) {
 		PORTB |= 1 << 2;
 		START_TIMER0;
-		PORTB |= 1 << 3;
     }
+	
+	if(current_bit == 0x0) {
+		PORTB |= 1 << 3;	
+	}
    
     // On the next interrupt, transmit the next bit, by removing this one.
-    bdeque_pop_front(encoded_packet);
   }
 
   if(!bdeque_is_empty(encoded_packet) && global_state == ERROR) {
     // @Incomplete:
     // If we get an error in transmission, and need to send something back to stop the transmission
-    // We enter this statement, and transmit the messeage at 300 kHz. -bjarke, 9th May 2019.
+    // We enter this statement, and transmit the message at 300 kHz. -bjarke, 9th May 2019.
     current_bit = bdeque_peek_front(encoded_packet);
 
-    START_TIMER1; // Creates an intterupt after 1ms.
+    START_TIMER1; // Creates an interrupt after 1ms.
 
     while(((TCCR1B >> CS10) & 1) == 1) {
       if(current_bit == 0x1) {
@@ -297,27 +321,16 @@ ISR(INT0_vect) {
 
     START_TIMER1;
 
-    int lpf_prev_size = bdeque_size(lpf_buffer);
-    int hpf_prev_size = bdeque_size(hpf_buffer);
-    
-    while(((TCCR1B >> CS10) & 1) == 1) {
-      // If some port goes HIGH, load either the lpf or hpf buffer.
-      if(((PINB >> 1) & 1) == 1) { // If there is a 1 on this PIN, load 1 into LPF.
+    lpf_prev_size = bdeque_size(lpf_buffer);
+    hpf_prev_size = bdeque_size(hpf_buffer);
+
+	if(((PINB >> 1) & 1) == 1) { // If there is a 1 on this PIN, load 1 into LPF.
 		bdeque_push_back(lpf_buffer, 0x1);
-      }
-      if(((PINB >> 2) & 1) == 1) { // If there is a 1 on this PIN, load 1 into HPF.
+    }
+    if(((PINB >> 2) & 1) == 1) { // If there is a 1 on this PIN, load 1 into HPF.
         bdeque_push_back(hpf_buffer, 0x1);
-      }
     }
 
-    // If the size of the buffer didn't, this means that we didn't receive a 1.
-    // Therefore we load a 0 into the buffer. 
-    if(lpf_prev_size == bdeque_size(lpf_buffer)) {
-      bdeque_push_back(lpf_buffer, 0x0);
-    }
-    if(hpf_prev_size == bdeque_size(hpf_buffer)) {
-      bdeque_push_back(hpf_buffer, 0x0);
-    }
   }
 } 
 
@@ -325,9 +338,32 @@ ISR(TIMER1_COMPA_vect) {
   STOP_TIMER1; // Stop TIMER1, since 1 ms has passed.
   STOP_TIMER0; // Likewise stop TIMER0, since we no longer want to transmit the bit.
   STOP_TIMER2; // Stop this as well if we are sending at 220 KHz.
-
+  
+  switch(global_state) {
+	case SENDING:
+		bdeque_pop_front(encoded_packet);
+	case RECEIVING:
+		// If the size of the buffer didn't, this means that we didn't receive a 1.
+		// Therefore we load a 0 into the buffer.
+		if(lpf_prev_size == bdeque_size(lpf_buffer)) {
+			bdeque_push_back(lpf_buffer, 0x0);
+		}
+		if(hpf_prev_size == bdeque_size(hpf_buffer)) {
+			bdeque_push_back(hpf_buffer, 0x0);
+		}
+	case ERROR:
+	default:
+		break;
+		// Do nothing
+  }
+	 
   // There are some things we want to make sure are stopped here..
-  PORTB &= ~1 << 0;
+  PORTB &= ~1 << 0; // Sending HIGH on output
+  
+  // These are for debugging...
+  PORTB &= ~1 << 4;
+  PORTB &= ~1 << 2;
+  PORTB &= ~1 << 3;
 }
 
 ISR(TIMER0_COMPA_vect) {
