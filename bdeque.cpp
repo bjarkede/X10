@@ -109,7 +109,7 @@ int bdeque_size(bdeque_type *d) {
   struct node *n = d->head;
   int i = 1; // We init this as one, because we dont count the the tail when we increment.
 
-  while(n->next != NULL) {
+  while(n->next != d->tail) {
     ++i;
     n = n->next;
   }

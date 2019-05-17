@@ -11,8 +11,9 @@ int hpf_prev_size = 0;
 state global_state;
 
 X10_Controller::X10_Controller() {
-	DDRB = 0B11111110;
-	DDRD = 0B11111111;
+	DDRB = 0B11111100;
+	DDRD = 0B11111000;
+	DDRA = 0B00000000;
 	X10_state = IDLE;
 }
 
@@ -98,7 +99,7 @@ void X10_Controller::transmit_code(X10_Code* code) {
   return;
 }
 
-bdeque_type* X10_Controller::receive_code() {
+/*bdeque_type* X10_Controller::receive_code() {
   this->set_state(RECEIVING);
   global_state = RECEIVING;
 
@@ -149,7 +150,7 @@ bdeque_type* X10_Controller::receive_code() {
   global_state = IDLE;
   this->set_state(IDLE);
   return hpf_buffer; // @TODO return the right thing
-  }
+  }*/
 
 bool X10_Controller::idle() {
   this->set_state(IDLE);
@@ -160,6 +161,7 @@ bool X10_Controller::idle() {
   bdeque_clear(hpf_buffer);
 
   INT0_init();
+  TIMER1_init();
   sei();
 
   START_INT0_INTERRUPT;
@@ -174,9 +176,9 @@ bool X10_Controller::idle() {
   bool is_equal_lpf = false;
   bool is_equal_hpf = false;
 
-  while(!is_equal_lpf && !is_equal_hpf) {
-    if(bdeque_size(lpf_buffer) == 5 && bdeque_size(hpf_buffer) == 5) {
-      // Maintain 4 bits while idle untill the start_code is registered.
+  while(1) {
+    /*if(bdeque_size(lpf_buffer) == 5 && bdeque_size(hpf_buffer) == 5) {
+      // Maintain 4 bits while idle until the start_code is registered.
       bdeque_pop_front(lpf_buffer);
       bdeque_pop_front(hpf_buffer);
     }
@@ -185,25 +187,16 @@ bool X10_Controller::idle() {
     }
     if(bdeque_equal(hpf_buffer, compare_deque)) {
       is_equal_hpf = true;
-    }
+    }*/
   }
-
-  // @TODO:
-  // The rest of the implemention from here on down is TODO.
-  // We need to exit our idle loop, i figure if we get START_CODE
-  // in the hpf_buffer, we return true, and set the global_state to
-  // ERROR..
-  // We then modify the rest of our functions to handle what to do if
-  // the global_state is ERROR.
-  if(is_equal_lpf || is_equal_hpf) {
-    STOP_INT0_INTERRUPT;
-    cli();
+  
+  STOP_INT0_INTERRUPT;
+  cli();
+  
+  bdeque_clear(lpf_buffer);
+  bdeque_clear(hpf_buffer);
     
-    lpf_buffer.clear();
-    hpf_buffer.clear();
-    
-    return false; // We received the start-code and need to receive.
-  } else { return true; }
+  return true;
 }
 
 /*bdeque_type * decode_manchester_deque(bdeque_type *d) {
@@ -288,9 +281,9 @@ bool compare_to_stop_code(bdeque_type *d1, bdeque_type *d2) {
 }
 
 ISR(INT0_vect) {
-  char unsigned current_bit;		
-		
-  //PORTB |= 1 << 1;		
+  char unsigned current_bit;	
+  
+  PORTB = 0x00;
 		
   if(!bdeque_is_empty(encoded_packet) && global_state == SENDING) {
     current_bit = bdeque_peek_front(encoded_packet);
@@ -308,6 +301,7 @@ ISR(INT0_vect) {
     // On the next interrupt, transmit the next bit, by removing this one.
   }
 
+	/*
   if(!bdeque_is_empty(encoded_packet) && global_state == ERROR) {
     current_bit = bdeque_peek_front(encoded_packet);
 
@@ -317,23 +311,17 @@ ISR(INT0_vect) {
 		TIMSK2 |= 1<<OCIE2A;
 		START_TIMER2;
     }
-  }
+  }*/
 
-  if(global_state == RECEIVING) {
-
-    START_TIMER1;
-
-    lpf_prev_size = bdeque_size(lpf_buffer);
-    hpf_prev_size = bdeque_size(hpf_buffer);
-
-	if(((PINB >> 1) & 1) == 1) { // If there is a 1 on this PIN, load 1 into LPF.
+  if(global_state == IDLE) {
+	if(PINA & (1 << 0)) { // If there is a 1 on this PIN, load 1 into LPF.
+		PORTB |= 1 << 3;
 		bdeque_push_back(lpf_buffer, 0x1);
-    }
-    if(((PINB >> 2) & 1) == 1) { // If there is a 1 on this PIN, load 1 into HPF.
-        bdeque_push_back(hpf_buffer, 0x1);
-    }
-
-  }
+    } else {
+		PORTB |= 1 << 2;
+		bdeque_push_back(lpf_buffer, 0x0);	
+	}
+  }  
 } 
 
 ISR(TIMER1_COMPA_vect) {
@@ -347,15 +335,9 @@ ISR(TIMER1_COMPA_vect) {
   switch(global_state) {
 	case SENDING:
 		bdeque_pop_front(encoded_packet);
-	case RECEIVING:
+	case IDLE:
 		// If the size of the buffer didn't, this means that we didn't receive a 1.
 		// Therefore we load a 0 into the buffer.
-		if(lpf_prev_size == bdeque_size(lpf_buffer)) {
-			bdeque_push_back(lpf_buffer, 0x0);
-		}
-		if(hpf_prev_size == bdeque_size(hpf_buffer)) {
-			bdeque_push_back(hpf_buffer, 0x0);
-		}
 	case ERROR:
 	default:
 		break;
