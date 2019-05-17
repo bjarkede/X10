@@ -18,6 +18,7 @@ bool bdeque_is_empty(bdeque_type *d) {
   return d->head == NULL;
 }
 
+// The integer value, v, decides how many times we pop the last element in our linked list.
 void bdeque_resize(bdeque_type *d, int v) {
 	for(int i = 0; i < v; i++) {
 		bdeque_pop_back(d);

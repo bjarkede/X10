@@ -91,7 +91,7 @@ void X10_Controller::transmit_code(X10_Code* code) {
   STOP_TIMER0;
   cli();
   
-  PORTB |= 1 << 5;
+  PORTB |= 1 << 6;
 
   global_state = IDLE;
   this->set_state(IDLE);
@@ -131,8 +131,8 @@ bdeque_type* X10_Controller::receive_code() {
   cli();
   
   // Resize the vectors, to remove the stop-code.
-  bdeque_resize(lpf_buffer, bdeque_size(lpf_buffer) - 4);
-  bdeque_resize(hpf_buffer, bdeque_size(hpf_buffer) - 4);
+  bdeque_resize(lpf_buffer, 4);
+  bdeque_resize(hpf_buffer, 4);
 
   // @TODO:
   // We need to implement the functions used below to our new datastructure -bjarke, 16th May 2019.
@@ -289,32 +289,25 @@ ISR(INT0_vect) {
     START_TIMER1; // This creates an interrupt after 1ms.
    
     if(current_bit == 0x1) {
-		PORTB |= 1 << 2;
+		TIMSK0 |= 1<<OCIE0A;
 		START_TIMER0;
     }
 	
 	if(current_bit == 0x0) {
-		PORTB |= 1 << 3;	
 	}
    
     // On the next interrupt, transmit the next bit, by removing this one.
   }
 
   if(!bdeque_is_empty(encoded_packet) && global_state == ERROR) {
-    // @Incomplete:
-    // If we get an error in transmission, and need to send something back to stop the transmission
-    // We enter this statement, and transmit the message at 300 kHz. -bjarke, 9th May 2019.
     current_bit = bdeque_peek_front(encoded_packet);
 
     START_TIMER1; // Creates an interrupt after 1ms.
 
-    while(((TCCR1B >> CS10) & 1) == 1) {
-      if(current_bit == 0x1) {
-	START_TIMER2;
-      }
+    if(current_bit == 0x1) {
+		TIMSK2 |= 1<<OCIE2A;
+		START_TIMER2;
     }
-
-    bdeque_pop_front(encoded_packet);
   }
 
   if(global_state == RECEIVING) {
@@ -337,7 +330,10 @@ ISR(INT0_vect) {
 ISR(TIMER1_COMPA_vect) {
   STOP_TIMER1; // Stop TIMER1, since 1 ms has passed.
   STOP_TIMER0; // Likewise stop TIMER0, since we no longer want to transmit the bit.
-  STOP_TIMER2; // Stop this as well if we are sending at 220 KHz.
+  STOP_TIMER2; // Stop this as well if we are sending at 300 KHz.
+  
+  TIMSK0 &= ~(1<<OCIE0A);
+  TIMSK2 &= ~(1<<OCIE2A);
   
   switch(global_state) {
 	case SENDING:
@@ -356,45 +352,26 @@ ISR(TIMER1_COMPA_vect) {
 		break;
 		// Do nothing
   }
-	 
-  // There are some things we want to make sure are stopped here..
-  PORTB &= ~1 << 0; // Sending HIGH on output
-  
-  // These are for debugging...
-  PORTB &= ~1 << 4;
-  PORTB &= ~1 << 2;
-  PORTB &= ~1 << 3;
 }
 
 ISR(TIMER0_COMPA_vect) {
-  PORTB |= 1 << 4;
-  if(signal_state) {
-    signal_state = false; 
-    PORTB |= 1 << 0;
-  } else {
-    signal_state = true;
-    PORTB &= ~1 << 0;
-  }
+  PORTB ^= 1 << 1;
 }
 
 ISR(TIMER2_COMPA_vect) {
-   if(signal_state) {
-    signal_state = false; 
-    PORTB |= 1 << 0;
-  } else {
-    signal_state = true;
-    PORTB &= ~1 << 0;
-  }
+  PORTB ^= 1 << 1;
 }
 
 void TIMER0_init() {
 	  SET_TIMER0_WAVEFORM;
 	  SET_TIMER0_MASK;
+	  TCNT0 = 0;
 	  OCR0A = 65; // See documentation for this value...
 }
 
 void TIMER1_init() {
 	  TCCR1B |= (1 << WGM12);  // Set CTC Mode
+	  TCNT1   = 0;
 	  TIMSK1 |= (1 << OCIE1A); // Interrupt enable
 	  OCR1A   = 15999;         // It takes roughly 1 ms to reach this
 }
@@ -402,6 +379,7 @@ void TIMER1_init() {
 void TIMER2_init() {
 	SET_TIMER2_WAVEFORM;
 	SET_TIMER2_MASK;
+	TCNT2 = 0;
 	OCR2A = 27; // 16 MHz / (2 * prescaler (1) * desired_frequency) = 26.67
 }
 
