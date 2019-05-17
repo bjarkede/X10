@@ -21,14 +21,16 @@ struct bdeque {
 	struct node *tail;
 };
 
-bdeque_type * bdeque_alloc(); // Creates a new bdeque_type, returns pointer to memory
+bdeque_type* bdeque_alloc(); // Creates a new bdeque_type, returns pointer to memory
 void bdeque_free(bdeque_type *d); // Free memory
 
 // This functions checks whether the datastructure is empty or not
 
 bool bdeque_is_empty(bdeque_type *d);
+bool bdeque_equal(bdeque_type *d1, bdeque_type *d2);
 int bdeque_size(bdeque_type *d);
 void bdeque_resize(bdeque_type *d, int v);
+void bdeque_clear(bdeque_type *d);
 
 // These functions inserts data into our datastucture 
 

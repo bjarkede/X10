@@ -10,5 +10,11 @@ int main(int argc, char* argv[]) {
   
   controller.transmit_code(code);
 
+  while(1) {
+    if(!controller.idle()) {
+      bdeque_type * received_packet = controller.receive();
+    }
+  }
+
   return 0;
 }

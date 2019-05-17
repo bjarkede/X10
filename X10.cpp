@@ -151,12 +151,13 @@ bdeque_type* X10_Controller::receive_code() {
   return hpf_buffer; // @TODO return the right thing
   }
 
-/*bool X10_Controller::idle() {
+bool X10_Controller::idle() {
   this->set_state(IDLE);
   global_state = IDLE;
 
-  // @TODO:
-  // We might want to make sure that the buffers are empty when we enter idle. -bjarke, 15th May 2019.
+  // Make sure that the buffers are empty.
+  bdeque_clear(lpf_buffer);
+  bdeque_clear(hpf_buffer);
 
   INT0_init();
   sei();
@@ -164,28 +165,36 @@ bdeque_type* X10_Controller::receive_code() {
   START_INT0_INTERRUPT;
 
   // We compare the lpf/hpf buffers 4 bits to the start code.
-  std::deque<char unsigned> compare_deque;
-  compare_deque.push_back(0x0);
-  compare_deque.push_back(0x1);
-  compare_deque.push_back(0x1);
-  compare_deque.push_back(0x1);
+  bdeque_type *compare_deque = bdeque_alloc();
+  bdeque_push_back(compare_deque, 0x1);
+  bdeque_push_back(compare_deque, 0x1);
+  bdeque_push_back(compare_deque, 0x1);
+  bdeque_push_back(compare_deque, 0x0);
   
   bool is_equal_lpf = false;
   bool is_equal_hpf = false;
 
-  while(!is_equal_lpf || !is_equal_hpf) {
-    if(lpf_buffer.size() > 4 && hpf_buffer.size() > 4) {
+  while(!is_equal_lpf && !is_equal_hpf) {
+    if(bdeque_size(lpf_buffer) == 5 && bdeque_size(hpf_buffer) == 5) {
       // Maintain 4 bits while idle untill the start_code is registered.
-      lpf_buffer.pop_front();
-      hpf_buffer.pop_front();
+      bdeque_pop_front(lpf_buffer);
+      bdeque_pop_front(hpf_buffer);
     }
-	  
-    if(compare_deque.size() == lpf_buffer.size() || compare_deque.size() == hpf_buffer.size()) {
-      is_equal_lpf = std::equal(compare_deque.begin(), compare_deque.end(), lpf_buffer.begin());
-      is_equal_hpf = std::equal(compare_deque.begin(), compare_deque.end(), hpf_buffer.begin());
+    if(bdeque_equal(lpf_buffer, compare_deque)) {
+      is_equal_lpf = true;
+    }
+    if(bdeque_equal(hpf_buffer, compare_deque)) {
+      is_equal_hpf = true;
     }
   }
 
+  // @TODO:
+  // The rest of the implemention from here on down is TODO.
+  // We need to exit our idle loop, i figure if we get START_CODE
+  // in the hpf_buffer, we return true, and set the global_state to
+  // ERROR..
+  // We then modify the rest of our functions to handle what to do if
+  // the global_state is ERROR.
   if(is_equal_lpf || is_equal_hpf) {
     STOP_INT0_INTERRUPT;
     cli();
@@ -195,7 +204,7 @@ bdeque_type* X10_Controller::receive_code() {
     
     return false; // We received the start-code and need to receive.
   } else { return true; }
-  }*/
+}
 
 /*bdeque_type * decode_manchester_deque(bdeque_type *d) {
   char unsigned current_bit;

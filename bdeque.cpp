@@ -18,11 +18,33 @@ bool bdeque_is_empty(bdeque_type *d) {
   return d->head == NULL;
 }
 
+bool bdeque_equal(bdeque_type *d1, bdeque_type *d2) {
+  if(bdeque_size(d1) != bdeque_size(d2)) {
+    return false;
+  }
+  
+  struct node *n1 = d1->head;
+  struct node *n2 = d2->head;
+  
+  for(int i = 0; i <= bdeque_size(d1); ++i) {
+    if(n1->val != n2->val) { return false; }
+    n1 = n1->next;
+    n2 = n2->next;
+  }
+  return true;
+}
+
 // The integer value, v, decides how many times we pop the last element in our linked list.
 void bdeque_resize(bdeque_type *d, int v) {
 	for(int i = 0; i < v; i++) {
 		bdeque_pop_back(d);
 	}
+}
+
+void bdeque_clear(bdeque_type *d) {
+  while(d->head != NULL) {
+    bdeque_pop_back(d);
+  }
 }
 
 void bdeque_push_front(bdeque_type *d, bdeque_valtype v) {
@@ -87,7 +109,7 @@ int bdeque_size(bdeque_type *d) {
   struct node *n = d->head;
   int i = 1; // We init this as one, because we dont count the the tail when we increment.
 
-  while(n != d->tail) {
+  while(n->next != NULL) {
     ++i;
     n = n->next;
   }
