@@ -2,6 +2,88 @@
 #include "X10const.hpp"
 
 
+Custom_deque::Custom_deque(int size)
+{
+  data = malloc(sizeof(unsigned char) * size);
+  _capacity = size;
+  clear();
+}
+
+bool Custom_deque::is_empty()
+{
+  return _size == 0;
+}
+
+int Custom_deque::size()
+{
+  return _size;
+}
+
+bool Custom_deque::equals(Custom_deque& other)
+{
+  if(other.size() != _size)
+    return false;
+
+  for(int i = 0; i < _size; i++)
+    if (other.get_element_at(i) != get_element_at(i))
+      return false;
+
+  return true;
+}
+
+unsigned char Custom_deque::get_element_at(int index)
+{
+  int newIndex = _front + index;
+
+  if (newIndex > _size)
+    return -1;
+
+  else if (newIndex > _capacity)
+    newIndex = newIndex - _capacity;
+
+  return data[newIndex];
+}
+
+
+void Custom_deque::clear()
+{
+  for(int i = 0; i < _capacity; i++)
+    data[i] = 0;
+}
+
+void Custom_deque::push_back(unsigned char item)
+{
+  data[_index] = item;
+  incrementIndex();
+  _size++;
+}
+
+unsigned char Custom_deque::pop_front()
+{
+  unsigned char value = data[_front];
+  incrementIndex();
+  _size--;
+  return value;
+}
+
+unsigned char Custom_deque::peek_front()
+{
+  return data[_front];
+}
+
+void Custom_deque::incrementIndex()
+{
+  index++;
+  if (index > _capacity)
+    index = 0;
+}
+
+
+
+
+
+
+
 bdeque_type * bdeque_alloc() {
   bdeque_type *d = (bdeque_type *)malloc(sizeof(bdeque_type));
   if(d != nullptr) {
