@@ -4,7 +4,7 @@
 
 Custom_deque::Custom_deque(int size)
 {
-  data = malloc(sizeof(unsigned char) * size);
+  data = (char unsigned *)malloc(sizeof(unsigned char) * size);
   _capacity = size;
   clear();
 }
@@ -56,6 +56,8 @@ void Custom_deque::push_back(unsigned char item)
   data[_index] = item;
   incrementIndex();
   _size++;
+  if (_size > _capacity)
+    _size = _capacity;
 }
 
 unsigned char Custom_deque::pop_front()
@@ -73,9 +75,9 @@ unsigned char Custom_deque::peek_front()
 
 void Custom_deque::incrementIndex()
 {
-  index++;
-  if (index > _capacity)
-    index = 0;
+  _index++;
+  if (_index > _capacity)
+    _index = 0;
 }
 
 

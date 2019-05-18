@@ -1,6 +1,8 @@
 //#include "X10.hpp"
-#include "bdeque.hpp"
+#include "bdeque.cpp"
 #include <iostream>
+
+using namespace std;
 
 int main(int argc, char* argv[]) {
 
@@ -25,6 +27,11 @@ int main(int argc, char* argv[]) {
   b.push_back(16);
   b.push_back(64);
 
+  for(int i = 0; i < 20; i++) {
+    b.push_back(i);
+    d.push_back(i);
+  }
+
   cout << d.size() << endl;
   cout << b.size() << endl;
   cout << d.equals(b) << endl;
@@ -33,7 +40,6 @@ int main(int argc, char* argv[]) {
     //if(!controller.idle()) { // @TODO: Test idle().
 		//PORTB |= 1 << 3;
 	  //bdeque_type * received_packet = controller.receive_code();
-    }
   }
 
   return 0;

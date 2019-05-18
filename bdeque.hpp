@@ -7,25 +7,25 @@
 class Custom_deque
 {
 public:	
-	Custom_deque(int size);
-	bool is_empty();
-	bool equals(Custom_deque& other);
-	int size();
-	void clear();
-
-	unsigned char get_element_at(int index);
-	void push_back(unsigned char item);
-	unsigned char pop_front();
-	unsigned char peek_front();
+  Custom_deque(int size);
+  bool is_empty();
+  bool equals(Custom_deque& other);
+  int size();
+  void clear();
+  
+  unsigned char get_element_at(int index);
+  void push_back(unsigned char item);
+  unsigned char pop_front();
+  unsigned char peek_front();
 
 private:
-	unsigned char[] data;
-	int _index = 0;
-	int _size = 0;
-	int _capacity = 0;
-	int _front = 0;
-	void incrementIndex();
-}
+  unsigned char* data;
+  int _index = 0;
+  int _size = 0;
+  int _capacity = 0;
+  int _front = 0;
+  void incrementIndex();
+};
 
 typedef struct bdeque bdeque_type;
 typedef char unsigned bdeque_valtype;
