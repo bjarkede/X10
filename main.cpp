@@ -12,11 +12,10 @@ int main(int argc, char* argv[]) {
   
   controller.transmit_code(code);
   */
-  
 
   while(1) {
     if(!controller.idle()) { // @TODO: Test idle().
-		PORTB |= 1 << 1;
+		PORTB |= 1 << 3;
 	  //bdeque_type * received_packet = controller.receive_code();
     }
   }

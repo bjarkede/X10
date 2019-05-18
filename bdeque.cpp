@@ -4,8 +4,8 @@
 
 bdeque_type * bdeque_alloc() {
   bdeque_type *d = (bdeque_type *)malloc(sizeof(bdeque_type));
-  if(d != NULL) {
-    d->head = d->tail = NULL; // Datastructure is empty
+  if(d != nullptr) {
+    d->head = d->tail = nullptr; // Datastructure is empty
   }
   return d;
 }
@@ -15,7 +15,7 @@ void bdeque_free(bdeque_type *d) {
 }
 
 bool bdeque_is_empty(bdeque_type *d) {
-  return d->head == NULL;
+  return d->head == nullptr;
 }
 
 bool bdeque_equal(bdeque_type *d1, bdeque_type *d2) {
@@ -42,7 +42,7 @@ void bdeque_resize(bdeque_type *d, int v) {
 }
 
 void bdeque_clear(bdeque_type *d) {
-  while(d->head != NULL) {
+  while(d->head != nullptr) {
     bdeque_pop_back(d);
   }
 }
@@ -51,8 +51,8 @@ void bdeque_push_front(bdeque_type *d, bdeque_valtype v) {
   struct node *n = (node *)malloc(sizeof(struct node));
   n->val = v;
   n->next = d->head;
-  n->prev = NULL;
-  if(d->tail == NULL) {
+  n->prev = nullptr;
+  if(d->tail == nullptr) {
     d->head = d->tail = n;
   } else {
     d->head->prev = n;
@@ -64,8 +64,8 @@ void bdeque_push_back(bdeque_type *d, bdeque_valtype v) {
   struct node *n = (node *)malloc(sizeof(struct node));
   n->val = v;
   n->prev = d->tail;
-  n->next = NULL;
-  if(d->head == NULL) {
+  n->next = nullptr;
+  if(d->head == nullptr) {
     d->head = d->tail = n;
   } else {
     d->tail->next = n;
@@ -77,7 +77,7 @@ bdeque_valtype bdeque_pop_front(bdeque_type *d) {
   bdeque_valtype v = d->head->val;
   struct node *n = d->head;
   if(d->head == d->tail) {
-    d->head = d->tail = NULL;
+    d->head = d->tail = nullptr;
   } else {
     d->head = n->next;
   }
@@ -89,7 +89,7 @@ bdeque_valtype bdeque_pop_back(bdeque_type *d) {
   bdeque_valtype v = d->tail->val;
   struct node *n = d->tail;
   if(d->head == d->tail) {
-    d->head = d->tail = NULL;
+    d->head = d->tail = nullptr;
   } else {
     d->tail = n->prev;
   }
@@ -106,10 +106,14 @@ bdeque_valtype bdeque_peek_back(bdeque_type *d) {
 }
 
 int bdeque_size(bdeque_type *d) {
+  if(d->head == nullptr) {
+	  return 0;
+  }
+  
   struct node *n = d->head;
-  int i = 0;
+  int i = 1;
 
-  while(n->next != NULL) {
+  while(n->next != nullptr) {
     ++i;
     n = n->next;
   }

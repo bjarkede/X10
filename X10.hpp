@@ -73,8 +73,21 @@ bool split_and_compare_bits(std::deque<char unsigned> d1) {
 		    std::make_move_iterator(d1.end()));
   d1.erase(d1.begin() + d1.size()/2, d1.end());
   
-  for(int i = 0; i <= d1.size(); i++){
-    if(d1[i] != d2[i]) { return false; }
+  bdeque_type* d2 = bdeque_alloc();
+  struct node* n1  = d1->head;
+  struct node* n1  = d1->head;
+  
+  for(int i = 0; i != bdeque_size(d1)/2; i ++) {
+	  n = n->next;
+  }
+  
+  d2->head = n;
+  d2->tail = d1->tail;
+  
+  while(n1->next != NULL) {
+	if(n1->val != n2->val) {
+		return false;	
+	}
   }
 
   return true;

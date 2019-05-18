@@ -1,9 +1,9 @@
 #include "X10.hpp"
 
-bdeque_type *encoded_packet = bdeque_alloc(); // This packet is empty unless we are sending an X10 Command.
-bdeque_type *lpf_buffer     = bdeque_alloc();     // This buffer is loaded with bits received at 120khz.
-bdeque_type *hpf_buffer     = bdeque_alloc();	  // This buffer is loaded with bits received at 300khz.
-bdeque_type *compare_deque  = bdeque_alloc();
+static bdeque_type *encoded_packet;    // This packet is empty unless we are sending an X10 Command.
+static bdeque_type *lpf_buffer;       // This buffer is loaded with bits received at 120khz.
+static bdeque_type *hpf_buffer;     	  // This buffer is loaded with bits received at 300khz.
+static bdeque_type *compare_deque;  
 
 bool signal_state = true;                 // We use this to determine if to send HIGH or LOW in ISR.
 bool is_equal_lpf = false;
@@ -17,11 +17,16 @@ X10_Controller::X10_Controller() {
 	DDRA = 0B00000000;
 	X10_state = IDLE;
 	
+	encoded_packet = bdeque_alloc();
+	lpf_buffer = bdeque_alloc(); 
+	hpf_buffer = bdeque_alloc(); 
+	compare_deque = bdeque_alloc(); 
+	
 	// We need this to compare
-	bdeque_push_back(compare_deque, 0x1);
-	bdeque_push_back(compare_deque, 0x1);
-	bdeque_push_back(compare_deque, 0x1);
 	bdeque_push_back(compare_deque, 0x0);
+	bdeque_push_back(compare_deque, 0x1);
+	bdeque_push_back(compare_deque, 0x1);
+	bdeque_push_back(compare_deque, 0x1);
 }
 
 state X10_Controller::get_state(X10_Controller* controller) const {
@@ -98,8 +103,6 @@ void X10_Controller::transmit_code(X10_Code* code) {
   STOP_INT0_INTERRUPT;
   STOP_TIMER0;
   cli();
-  
-  PORTB |= 1 << 6;
 
   global_state = IDLE;
   this->set_state(IDLE);
@@ -173,7 +176,7 @@ bool X10_Controller::idle() {
 
   START_INT0_INTERRUPT;
 
-  while(!is_equal_lpf || !is_equal_hpf) {
+  while(!lpf_buffer) {
 	// Do nothing.
   }
   
@@ -186,29 +189,29 @@ bool X10_Controller::idle() {
   return true;
 }
 
-/*bdeque_type * decode_manchester_deque(bdeque_type *d) {
+bdeque_type * decode_manchester_deque(bdeque_type *d) {
   char unsigned current_bit;
   char unsigned next_bit;
   bdeque_type *result = bdeque_alloc();
 
-  while(!bdeque_is_empty(d1)) {
-    current_bit = bdeque_pop_front(d1);
-    next_bit = bdeque_pop_front(d1);
-
+  while(!bdeque_is_empty(d)) {
+    current_bit = bdeque_pop_front(d);
+    next_bit = bdeque_pop_front(d);
+	
     if(current_bit == 0x1) {
       if(next_bit == 0x0) {
-	bdeque_push_back(result, 0x1);
+		bdeque_push_back(result, 0x1);
       }
     } else if (current_bit == 0x0) {
       if(next_bit == 0x1) {
-	bdeque_push_back(result, 0x0);
+		bdeque_push_back(result, 0x0);
       }
     }
   }
 
-  bdeque_free(d1);
+  bdeque_free(d);
   return result;
-  }*/
+  }
 
 /*bdeque_type * convert_to_binary_string(bdeque_type *d) {
 
@@ -222,10 +225,10 @@ bool X10_Controller::idle() {
   int j = 0;
   int k = 0;
   
-  struct node *n = result->head;
+  struct node *n = d->tail;
   
   //for(std::deque<char unsigned>::reverse_iterator rit = d1.rbegin(); rit != d1.rend(); ++rit) {
-  while(n != d1->tail) {  
+  while(n->prev != NULL) {  
     if(i < 6) {
       fc ^= (-n->val ^ fc) & (1 << i);
       i++;
@@ -242,7 +245,8 @@ bool X10_Controller::idle() {
     n = n->next;
   }
   
-  bdeque_free(d1);
+  bdeque_free(d);
+  
   bdeque_push_back(result, hc);
   bdeque_push_back(result, kc);
   bdeque_push_back(result, fc);
@@ -269,8 +273,6 @@ bool compare_to_stop_code(bdeque_type *d1, bdeque_type *d2) {
 
 ISR(INT0_vect) {
   char unsigned current_bit;	
-  
-  PORTB = 0x00;
 		
   if(!bdeque_is_empty(encoded_packet) && global_state == SENDING) {
     current_bit = bdeque_peek_front(encoded_packet);
@@ -303,24 +305,26 @@ ISR(INT0_vect) {
   // Implement logic in this state, for the hpf_buffer. -bjarke, 18th May 2019.
   if(global_state == IDLE) {
 	if(PINA & (1 << 0)) { // If there is a 1 on this PIN, load 1 into LPF.
-		PORTB |= 1 << 3;
 		bdeque_push_back(lpf_buffer, 0x1);
     } else {
-		PORTB |= 1 << 2;
 		bdeque_push_back(lpf_buffer, 0x0);	
 	}
 	
-	// Maintain 4 bytes in the buffer
-	if(bdeque_size(lpf_buffer) > bdeque_size(compare_deque)) {
-		bdeque_pop_front(lpf_buffer);
+	if(bdeque_size(lpf_buffer) > 2) {
+		PORTB |= 1 << 3;
 	}
+
+	/*if(bdeque_size(lpf_buffer) > bdeque_size(compare_deque)) {
+		bdeque_pop_front(lpf_buffer);
+	} else {
+	}*/
 	
 	// Now compare to compare_deque.
-	if(bdeque_equal(lpf_buffer, compare_deque)) {
+	/*if(bdeque_equal(lpf_buffer, compare_deque)) {
 		is_equal_lpf = true;
 	} else {
 		// Do nothing for now.
-	}
+	}*/
 	
   }  
 } 
@@ -346,11 +350,11 @@ ISR(TIMER1_COMPA_vect) {
 }
 
 ISR(TIMER0_COMPA_vect) {
-  PORTB ^= 1 << 1;
+  //PORTB ^= 1 << 1;
 }
 
 ISR(TIMER2_COMPA_vect) {
-  PORTB ^= 1 << 1;
+  //PORTB ^= 1 << 1;
 }
 
 void TIMER0_init() {
