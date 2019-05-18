@@ -3,10 +3,11 @@
 bdeque_type *encoded_packet = bdeque_alloc(); // This packet is empty unless we are sending an X10 Command.
 bdeque_type *lpf_buffer     = bdeque_alloc();     // This buffer is loaded with bits received at 120khz.
 bdeque_type *hpf_buffer     = bdeque_alloc();	  // This buffer is loaded with bits received at 300khz.
+bdeque_type *compare_deque  = bdeque_alloc();
 
 bool signal_state = true;                 // We use this to determine if to send HIGH or LOW in ISR.
-int lpf_prev_size = 0;
-int hpf_prev_size = 0;
+bool is_equal_lpf = false;
+bool is_equal_hpf = false;
 
 state global_state;
 
@@ -15,6 +16,12 @@ X10_Controller::X10_Controller() {
 	DDRD = 0B11111000;
 	DDRA = 0B00000000;
 	X10_state = IDLE;
+	
+	// We need this to compare
+	bdeque_push_back(compare_deque, 0x1);
+	bdeque_push_back(compare_deque, 0x1);
+	bdeque_push_back(compare_deque, 0x1);
+	bdeque_push_back(compare_deque, 0x0);
 }
 
 state X10_Controller::get_state(X10_Controller* controller) const {
@@ -166,28 +173,8 @@ bool X10_Controller::idle() {
 
   START_INT0_INTERRUPT;
 
-  // We compare the lpf/hpf buffers 4 bits to the start code.
-  bdeque_type *compare_deque = bdeque_alloc();
-  bdeque_push_back(compare_deque, 0x1);
-  bdeque_push_back(compare_deque, 0x1);
-  bdeque_push_back(compare_deque, 0x1);
-  bdeque_push_back(compare_deque, 0x0);
-  
-  bool is_equal_lpf = false;
-  bool is_equal_hpf = false;
-
-  while(1) {
-    /*if(bdeque_size(lpf_buffer) == 5 && bdeque_size(hpf_buffer) == 5) {
-      // Maintain 4 bits while idle until the start_code is registered.
-      bdeque_pop_front(lpf_buffer);
-      bdeque_pop_front(hpf_buffer);
-    }
-    if(bdeque_equal(lpf_buffer, compare_deque)) {
-      is_equal_lpf = true;
-    }
-    if(bdeque_equal(hpf_buffer, compare_deque)) {
-      is_equal_hpf = true;
-    }*/
+  while(!is_equal_lpf || !is_equal_hpf) {
+	// Do nothing.
   }
   
   STOP_INT0_INTERRUPT;
@@ -312,7 +299,8 @@ ISR(INT0_vect) {
 		START_TIMER2;
     }
   }*/
-
+  // TODO:
+  // Implement logic in this state, for the hpf_buffer. -bjarke, 18th May 2019.
   if(global_state == IDLE) {
 	if(PINA & (1 << 0)) { // If there is a 1 on this PIN, load 1 into LPF.
 		PORTB |= 1 << 3;
@@ -321,6 +309,19 @@ ISR(INT0_vect) {
 		PORTB |= 1 << 2;
 		bdeque_push_back(lpf_buffer, 0x0);	
 	}
+	
+	// Maintain 4 bytes in the buffer
+	if(bdeque_size(lpf_buffer) > bdeque_size(compare_deque)) {
+		bdeque_pop_front(lpf_buffer);
+	}
+	
+	// Now compare to compare_deque.
+	if(bdeque_equal(lpf_buffer, compare_deque)) {
+		is_equal_lpf = true;
+	} else {
+		// Do nothing for now.
+	}
+	
   }  
 } 
 
@@ -336,12 +337,11 @@ ISR(TIMER1_COMPA_vect) {
 	case SENDING:
 		bdeque_pop_front(encoded_packet);
 	case IDLE:
-		// If the size of the buffer didn't, this means that we didn't receive a 1.
-		// Therefore we load a 0 into the buffer.
+		// Do nothing.
 	case ERROR:
 	default:
 		break;
-		// Do nothing
+		// Do nothing.
   }
 }
 
