@@ -1,9 +1,9 @@
 #include "X10.hpp"
 
-static bdeque_type *encoded_packet;    // This packet is empty unless we are sending an X10 Command.
-static bdeque_type *lpf_buffer;       // This buffer is loaded with bits received at 120khz.
-static bdeque_type *hpf_buffer;     	  // This buffer is loaded with bits received at 300khz.
-static bdeque_type *compare_deque;  
+//static bdeque_type *encoded_packet;    // This packet is empty unless we are sending an X10 Command.
+//static bdeque_type *lpf_buffer;       // This buffer is loaded with bits received at 120khz.
+//static bdeque_type *hpf_buffer;     	  // This buffer is loaded with bits received at 300khz.
+//static bdeque_type *compare_deque;  
 
 bool signal_state = true;                 // We use this to determine if to send HIGH or LOW in ISR.
 bool is_equal_lpf = false;
@@ -11,22 +11,43 @@ bool is_equal_hpf = false;
 
 state global_state;
 
+Custom_deque lpf_buffer;
+Custom_deque lpf_receive_buffer;
+Custom_deque hpf_buffer;
+Custom_deque encoded_packet;
+Custom_deque compare_deque_unique_code;
+Custom_deque error_buffer;
+
 X10_Controller::X10_Controller() {
 	DDRB = 0B11111100;
 	DDRD = 0B11111000;
 	DDRA = 0B00000000;
 	X10_state = IDLE;
 	
-	encoded_packet = bdeque_alloc();
-	lpf_buffer = bdeque_alloc(); 
-	hpf_buffer = bdeque_alloc(); 
-	compare_deque = bdeque_alloc(); 
+	_house_code    = 0x0;
+	_number_code   = 0x0;
+	_function_code = 0x0;
 	
+	//encoded_packet = bdeque_alloc();
+	//lpf_buffer = bdeque_alloc(); 
+	//hpf_buffer = bdeque_alloc(); 
+	//compare_deque = bdeque_alloc(); 
+	
+	lpf_buffer          = Custom_deque(4);
+	lpf_receive_buffer  = Custom_deque(64); // 56 bits for code, 4 bits stop code
+	compare_deque_unique_code = Custom_deque(4);
+	error_buffer = Custom_deque(4);
+
 	// We need this to compare
-	bdeque_push_back(compare_deque, 0x0);
-	bdeque_push_back(compare_deque, 0x1);
-	bdeque_push_back(compare_deque, 0x1);
-	bdeque_push_back(compare_deque, 0x1);
+	compare_deque_unique_code.push_back(0x0);
+	compare_deque_unique_code.push_back(0x1);
+	compare_deque_unique_code.push_back(0x1);
+	compare_deque_unique_code.push_back(0x1);
+	
+	error_buffer.push_back(0x0);
+	error_buffer.push_back(0x0);
+	error_buffer.push_back(0x0);
+	error_buffer.push_back(0x0);
 }
 
 state X10_Controller::get_state(X10_Controller* controller) const {
@@ -37,7 +58,7 @@ void X10_Controller::set_state(state new_state) {
 	this->X10_state = new_state;
 }
 
-void X10_Code::construct_packet(char unsigned hc, char unsigned nc, char unsigned fc) {
+/*void X10_Code::construct_packet(char unsigned hc, char unsigned nc, char unsigned fc) {
 	packet = bdeque_alloc();
 	for(int i = 0; i < 2; ++i) {
 		bdeque_push_back(packet, hc);
@@ -108,67 +129,47 @@ void X10_Controller::transmit_code(X10_Code* code) {
   this->set_state(IDLE);
   return;
 }
+*/
 
-/*bdeque_type* X10_Controller::receive_code() {
+void X10_Controller::receive_code() {
   this->set_state(RECEIVING);
   global_state = RECEIVING;
-
-  // Start the external interrupt.
-  INT0_init();
-  TIMER1_init(); // We use this to time the length of the bursts.
-  sei();
-
-  START_INT0_INTERRUPT;
-
-  // We need to check if the last four bits of one of the buffers
-  // is equal to the stop_code.
-  bdeque_type *compare_deque = bdeque_alloc();
-  bdeque_push_back(compare_deque, 0x1);
-  bdeque_push_back(compare_deque, 0x1);
-  bdeque_push_back(compare_deque, 0x1);
-  bdeque_push_back(compare_deque, 0x0);
   
   bool is_equal_stop = false;
   
   while(!is_equal_stop) {
-    is_equal_stop = compare_to_stop_code(lpf_buffer, compare_deque);
+    if (lpf_receive_buffer.size() > 50) {
+		if(lpf_receive_buffer.compare_last_four(compare_deque_unique_code)) {
+			is_equal_stop = true;
+		}
+		if(lpf_receive_buffer.compare_last_four(error_buffer)) {
+			this->set_state(ERROR);
+			return;
+		}
+	}
   }
-  
-  free(compare_deque); // Free this memory
 
-  // Stop when we have seen the stop code
   STOP_INT0_INTERRUPT;
   STOP_TIMER1;
   cli();
   
-  // Resize the vectors, to remove the stop-code.
-  bdeque_resize(lpf_buffer, 4);
-  bdeque_resize(hpf_buffer, 4);
-
-  // @TODO:
-  // We need to implement the functions used below to our new datastructure -bjarke, 16th May 2019.
-  if(!split_and_compare_bits(decode_manchester_deque(lpf_buffer))) {
-    // @Incomplete:
-    // The two messages are not equal to eachother, we
-    // need to handle this somehow, and send a messeage back that we got an error. -bjarke, 9th May 2019.
+  for(int i = 0; i < 4; i++) {
+	  lpf_receive_buffer.pop_back();
   }
-  
-  if(!split_and_compare_bits(decode_manchester_deque(hpf_buffer))) {
 
-  }
+  decode_manchester_deque(lpf_receive_buffer);
   
   global_state = IDLE;
   this->set_state(IDLE);
-  return hpf_buffer; // @TODO return the right thing
-  }*/
+  return;
+}
 
 bool X10_Controller::idle() {
   this->set_state(IDLE);
   global_state = IDLE;
 
   // Make sure that the buffers are empty.
-  bdeque_clear(lpf_buffer);
-  bdeque_clear(hpf_buffer);
+  lpf_buffer.clear();
 
   INT0_init();
   TIMER1_init();
@@ -176,42 +177,72 @@ bool X10_Controller::idle() {
 
   START_INT0_INTERRUPT;
 
-  while(!lpf_buffer) {
+  while(!is_equal_lpf) {
 	// Do nothing.
   }
   
-  STOP_INT0_INTERRUPT;
-  cli();
-  
-  bdeque_clear(lpf_buffer);
-  bdeque_clear(hpf_buffer);
+  lpf_buffer.clear();
     
   return true;
 }
 
-bdeque_type * decode_manchester_deque(bdeque_type *d) {
+void X10_Controller::decode_manchester_deque(Custom_deque &d) {
+  if(!d.is_symmetrical()) {
+	this->set_state(ERROR);
+	return;	  
+  }
+  
+  _house_code    = 0x0;
+  _number_code   = 0x0;
+  _function_code = 0x0;
+ 
   char unsigned current_bit;
   char unsigned next_bit;
-  bdeque_type *result = bdeque_alloc();
+  
+  const int house_code_offset = 3;
+  const int number_code_offset = 7;
+  const int function_code_offset = 11;
+  
+  PORTB |= 1 << 3;
 
-  while(!bdeque_is_empty(d)) {
-    current_bit = bdeque_pop_front(d);
-    next_bit = bdeque_pop_front(d);
-	
-    if(current_bit == 0x1) {
-      if(next_bit == 0x0) {
-		bdeque_push_back(result, 0x1);
-      }
-    } else if (current_bit == 0x0) {
-      if(next_bit == 0x1) {
-		bdeque_push_back(result, 0x0);
-      }
-    }
+  for (int i = 0; i < 14; i++) {
+  current_bit = d.get_element_at(i*2);
+  next_bit    = d.get_element_at((i*2)+1);
+	  
+	  if (current_bit == 0x1) 
+	  {
+		if (next_bit == 0x0) {
+			if (i <= house_code_offset)	
+				_house_code |= (1 << (house_code_offset-i));
+				
+			if (i > house_code_offset && i < house_code_offset + number_code_offset)
+				_number_code |= (1 << (number_code_offset-(i-house_code_offset)));
+				
+			if (i > house_code_offset && i < function_code_offset)
+				_function_code |= (1 << (house_code_offset-(i- function_code_offset)));
+		}
+	  }
+	  if (current_bit == 0x0)
+	  {
+		  if (next_bit == 0x1)
+		  {
+			  if (i <= house_code_offset)
+			  _house_code |= (0 << (house_code_offset-i));
+			  
+			  if (i > house_code_offset && i < house_code_offset + number_code_offset)
+			  _number_code |= (0 << (number_code_offset-(i-house_code_offset)));
+			  
+			  if (i > house_code_offset && i < function_code_offset)
+			  _function_code |= (0 << (house_code_offset-(i- function_code_offset)));
+		  }
+	  }
   }
-
-  bdeque_free(d);
-  return result;
-  }
+  
+  if (_house_code == HOUSE_A)
+	PORTB |= 1 << 2;
+  
+ return;
+}
 
 /*bdeque_type * convert_to_binary_string(bdeque_type *d) {
 
@@ -254,27 +285,10 @@ bdeque_type * decode_manchester_deque(bdeque_type *d) {
   return result;
   }*/
 
-bool compare_to_stop_code(bdeque_type *d1, bdeque_type *d2) {
-	struct node *n1 = d1->tail;
-	struct node *n2 = d2->tail;
-	for(int i = 0; i < 4; i++) {
-		if(n1->val != n2->val) {
-			free(n1);
-			free(n2);
-			return false;
-		}
-		n1 = n1->prev;
-		n2 = n2->prev;
-	}
-	free(n1);
-	free(n2);
-	return true;
-}
-
 ISR(INT0_vect) {
   char unsigned current_bit;	
 		
-  if(!bdeque_is_empty(encoded_packet) && global_state == SENDING) {
+  /*if(!bdeque_is_empty(encoded_packet) && global_state == SENDING) {
     current_bit = bdeque_peek_front(encoded_packet);
 
     START_TIMER1; // This creates an interrupt after 1ms.
@@ -288,7 +302,7 @@ ISR(INT0_vect) {
 	}
    
     // On the next interrupt, transmit the next bit, by removing this one.
-  }
+  }*/
 
 	/*
   if(!bdeque_is_empty(encoded_packet) && global_state == ERROR) {
@@ -305,27 +319,24 @@ ISR(INT0_vect) {
   // Implement logic in this state, for the hpf_buffer. -bjarke, 18th May 2019.
   if(global_state == IDLE) {
 	if(PINA & (1 << 0)) { // If there is a 1 on this PIN, load 1 into LPF.
-		bdeque_push_back(lpf_buffer, 0x1);
+		lpf_buffer.push_back(0x1);
     } else {
-		bdeque_push_back(lpf_buffer, 0x0);	
+		lpf_buffer.push_back(0x0);
 	}
 	
-	if(bdeque_size(lpf_buffer) > 2) {
-		PORTB |= 1 << 3;
+	if(lpf_buffer.size() == compare_deque_unique_code.size()) {
+		if(lpf_buffer.equals(compare_deque_unique_code)) {
+			is_equal_lpf = true;
+			global_state = RECEIVING;
+		}
 	}
-
-	/*if(bdeque_size(lpf_buffer) > bdeque_size(compare_deque)) {
-		bdeque_pop_front(lpf_buffer);
-	} else {
-	}*/
-	
-	// Now compare to compare_deque.
-	/*if(bdeque_equal(lpf_buffer, compare_deque)) {
-		is_equal_lpf = true;
-	} else {
-		// Do nothing for now.
-	}*/
-	
+  }
+  else if(global_state == RECEIVING) {
+	if(PINA & (1 << 0)) { // If there is a 1 on this PIN, load 1 into LPF.
+		lpf_receive_buffer.push_back(0x1);
+		} else {
+			lpf_receive_buffer.push_back(0x0);
+	    }
   }  
 } 
 
@@ -339,7 +350,7 @@ ISR(TIMER1_COMPA_vect) {
   
   switch(global_state) {
 	case SENDING:
-		bdeque_pop_front(encoded_packet);
+		//bdeque_pop_front(encoded_packet);
 	case IDLE:
 		// Do nothing.
 	case ERROR:
