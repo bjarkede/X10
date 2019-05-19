@@ -1,11 +1,5 @@
 #include "X10.hpp"
 
-//static bdeque_type *encoded_packet;    // This packet is empty unless we are sending an X10 Command.
-//static bdeque_type *lpf_buffer;       // This buffer is loaded with bits received at 120khz.
-//static bdeque_type *hpf_buffer;     	  // This buffer is loaded with bits received at 300khz.
-//static bdeque_type *compare_deque;  
-
-bool signal_state = true;                 // We use this to determine if to send HIGH or LOW in ISR.
 bool is_equal_lpf = false;
 bool is_equal_hpf = false;
 
@@ -19,24 +13,19 @@ Custom_deque compare_deque_unique_code;
 Custom_deque error_buffer;
 
 X10_Controller::X10_Controller() {
-	DDRB = 0B11111100;
-	DDRD = 0B11111000;
-	DDRA = 0B00000000;
-	X10_state = IDLE;
+	DDRB                      = 0B11111100;
+	DDRD                      = 0B11111000;
+	DDRA                      = 0B00000000;
+	X10_state                 = IDLE;
 	
-	_house_code    = 0x0;
-	_number_code   = 0x0;
-	_function_code = 0x0;
-	
-	//encoded_packet = bdeque_alloc();
-	//lpf_buffer = bdeque_alloc(); 
-	//hpf_buffer = bdeque_alloc(); 
-	//compare_deque = bdeque_alloc(); 
-	
-	lpf_buffer          = Custom_deque(4);
-	lpf_receive_buffer  = Custom_deque(64); // 56 bits for code, 4 bits stop code
+	_house_code               = 0x0;
+	_number_code              = 0x0;
+	_function_code            = 0x0;
+
+	lpf_buffer                = Custom_deque(4);
+	lpf_receive_buffer        = Custom_deque(64); // 56 bits for code, 4 bits stop code
 	compare_deque_unique_code = Custom_deque(4);
-	error_buffer = Custom_deque(4);
+	error_buffer              = Custom_deque(4);
 
 	// We need this to compare
 	compare_deque_unique_code.push_back(0x0);
@@ -244,47 +233,6 @@ void X10_Controller::decode_manchester_deque(Custom_deque &d) {
  return;
 }
 
-/*bdeque_type * convert_to_binary_string(bdeque_type *d) {
-
-  char unsigned hc;
-  char unsigned kc;
-  char unsigned fc;
-
-  bdeque_type *result = bdeque_alloc();
-  
-  int i = 0;
-  int j = 0;
-  int k = 0;
-  
-  struct node *n = d->tail;
-  
-  //for(std::deque<char unsigned>::reverse_iterator rit = d1.rbegin(); rit != d1.rend(); ++rit) {
-  while(n->prev != NULL) {  
-    if(i < 6) {
-      fc ^= (-n->val ^ fc) & (1 << i);
-      i++;
-    }
-    if (i > 5 && j < 6) {
-      kc ^= (-n->val ^ kc) & (1 << j);
-      j++;
-    }
-    if(j > 5 && k < 6) {
-      hc ^= (-n->val ^ hc) & (1 << k);
-      k++;
-    }
-    
-    n = n->next;
-  }
-  
-  bdeque_free(d);
-  
-  bdeque_push_back(result, hc);
-  bdeque_push_back(result, kc);
-  bdeque_push_back(result, fc);
-  
-  return result;
-  }*/
-
 ISR(INT0_vect) {
   char unsigned current_bit;	
 		
@@ -315,8 +263,7 @@ ISR(INT0_vect) {
 		START_TIMER2;
     }
   }*/
-  // TODO:
-  // Implement logic in this state, for the hpf_buffer. -bjarke, 18th May 2019.
+ 
   if(global_state == IDLE) {
 	if(PINA & (1 << 0)) { // If there is a 1 on this PIN, load 1 into LPF.
 		lpf_buffer.push_back(0x1);
