@@ -9,27 +9,13 @@ namespace X10Interface
 {
     public class KeyCode
     {
-        public KeyCode(string name, bool[] bitCode)
+        public KeyCode(string name, byte byteCode)
         {
             Name = name;
-            BitCode = bitCode;
+            ByteCode = byteCode;
         }
 
         public string Name { get; }
-        public bool[] BitCode { get; }
-
-        public byte GetByte()
-        {
-            byte tempByte = 0;
-            for (int i = 0; i < BitCode.Length; i++)
-            {
-                if (BitCode[i])
-                    tempByte |= (byte)(1 << BitCode.Length - 1 - i);
-                else
-                    tempByte |= (byte)(0 << BitCode.Length - 1 - i);
-            }
-
-            return tempByte;
-        }
+        public byte ByteCode { get; }
     }
 }

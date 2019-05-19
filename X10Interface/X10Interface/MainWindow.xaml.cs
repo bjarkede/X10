@@ -15,13 +15,15 @@ namespace X10Interface
     /// </summary>
     public partial class MainWindow : Window, INotifyPropertyChanged
     {
+        private const string NoSerialPortFound = "No connected devices";
+
         public MainWindow()
         {
             InitializeComponent();
             DataContext = this;
         }
 
-        public List<string> SerialPorts { get; } = new List<string>(SerialPort.GetPortNames().Any() ? SerialPort.GetPortNames() : new[] { "None Connected" });
+        public List<string> SerialPorts { get; } = new List<string>(SerialPort.GetPortNames().Any() ? SerialPort.GetPortNames() : new[] { NoSerialPortFound });
         public List<int> BaudRates { get; } = new List<int>()
         {
             110, 300, 600, 1200, 2400, 4800, 9600, 14400, 19200, 38400, 57600, 115200
@@ -61,62 +63,62 @@ namespace X10Interface
 
         public List<HouseCode> HouseCodes { get; set; } = new List<HouseCode>()
         {
-            new HouseCode("HOUSE_A", new[]{false,true,true,false, }),
-            new HouseCode("HOUSE_B", new []{false,true,true,true,}),
-            new HouseCode("HOUSE_C", new []{false,true,false,false,}),
-            new HouseCode("HOUSE_D", new []{true,false,false,false,}),
-            new HouseCode("HOUSE_E", new []{false,true,false,true,}),
-            new HouseCode("HOUSE_F", new []{true,false,false,true,}),
-            new HouseCode("HOUSE_G", new []{true,false,true,false,}),
-            new HouseCode("HOUSE_H", new []{true,false,true,true,}),
-            new HouseCode("HOUSE_I", new []{true,true,true,false,}),
-            new HouseCode("HOUSE_J", new []{true,true,true,true,}),
-            new HouseCode("HOUSE_K", new []{true,true,false,false,}),
-            new HouseCode("HOUSE_L", new []{true,true,false,true,}),
-            new HouseCode("HOUSE_M", new []{false,false,false,false,}),
-            new HouseCode("HOUSE_N", new []{false,false,false,true,}),
-            new HouseCode("HOUSE_O", new []{false,false,true,false,}),
-            new HouseCode("HOUSE_P", new []{false,false,true,true,}),
+            new HouseCode("HOUSE_A", 0B0110),
+            new HouseCode("HOUSE_B", 0B0111),
+            new HouseCode("HOUSE_C", 0B0100),
+            new HouseCode("HOUSE_D", 0B1000),
+            new HouseCode("HOUSE_E", 0B0101),
+            new HouseCode("HOUSE_F", 0B1001),
+            new HouseCode("HOUSE_G", 0B1010),
+            new HouseCode("HOUSE_H", 0B1011),
+            new HouseCode("HOUSE_I", 0B1110),
+            new HouseCode("HOUSE_J", 0B1111),
+            new HouseCode("HOUSE_K", 0B1100),
+            new HouseCode("HOUSE_L", 0B1101),
+            new HouseCode("HOUSE_M", 0B0000),
+            new HouseCode("HOUSE_N", 0B0001),
+            new HouseCode("HOUSE_O", 0B0010),
+            new HouseCode("HOUSE_P", 0B0011),
         };
 
         public List<KeyCode> KeyCodes { get; set; } = new List<KeyCode>()
         {
-            new KeyCode("KEY_1", new[] { false, false, true, true, false, }),
-            new KeyCode("KEY_2", new[] { false, false, true, true, true, }),
-            new KeyCode("KEY_3", new[] { false, false, true, false, false, }),
-            new KeyCode("KEY_4", new[] { false, false, true, false, true, }),
-            new KeyCode("KEY_5", new[] { false, true, false, false, false, }),
-            new KeyCode("KEY_6", new[] { false, true, false, false, true, }),
-            new KeyCode("KEY_7", new[] { false, true, false, true, false, }),
-            new KeyCode("KEY_8", new[] { false, true, false, true, true, }),
-            new KeyCode("KEY_9", new[] { false, true, true, true, false, }),
-            new KeyCode("KEY_10", new[] { false, true, true, true, true, }),
-            new KeyCode("KEY_11", new[] { false, true, true, false, false, }),
-            new KeyCode("KEY_12", new[] { false, true, true, false, true, }),
-            new KeyCode("KEY_13", new[] { false, false, false, false, false, }),
-            new KeyCode("KEY_14", new[] { false, false, false, false, true, }),
-            new KeyCode("KEY_15", new[] { false, false, false, true, false, }),
-            new KeyCode("KEY_16", new[] { false, false, false, true, true, }),
+            new KeyCode("KEY_1", 0B00110),
+            new KeyCode("KEY_2", 0B00111),
+            new KeyCode("KEY_3", 0B00100),
+            new KeyCode("KEY_4", 0B00101),
+            new KeyCode("KEY_5", 0B01000),
+            new KeyCode("KEY_6", 0B01001),
+            new KeyCode("KEY_7", 0B01010),
+            new KeyCode("KEY_8", 0B01011),
+            new KeyCode("KEY_9", 0B01110),
+            new KeyCode("KEY_10", 0B01111),
+            new KeyCode("KEY_11", 0B01100),
+            new KeyCode("KEY_12", 0B01101),
+            new KeyCode("KEY_13", 0B00000),
+            new KeyCode("KEY_14", 0B00001),
+            new KeyCode("KEY_15", 0B00010),
+            new KeyCode("KEY_16", 0B00011),
         };
 
 
         public List<FunctionCode> FunctionCodes { get; set; } = new List<FunctionCode>()
         {
-            new FunctionCode("ALL_UNITS_OFF", new[] {true,false,false,false,false,}),
-            new FunctionCode("ALL_LIGHTS_ON", new[] {true,true,false,false,false,}),
-            new FunctionCode("ON",  new[] {true,false,true,false,false,}),
-            new FunctionCode("OFF",  new[] {true,true,true,false,false,}),
-            new FunctionCode("DIM",  new[] {true,false,false,true,false,}),
-            new FunctionCode("BRIGHT",  new[] {true,true,false,true,false,}),
-            new FunctionCode("ALL_LIGHTS_OFF",  new[] {true,false,true,true,false,}),
-            new FunctionCode("EXTENDED_CODE", new[] {true,true,true,true,false,}),
-            new FunctionCode("HAIL_REQUEST", new[] {true,false,false,false,true,}),
-            new FunctionCode("HAIL_ACKNOWLEDGE", new[] {true,true,false,false,true,}),
-            new FunctionCode("PRE_SET_DIM",  new[] {true,false,true,false,true,}),
-            new FunctionCode("EXTENDED_DATA", new[] {true,false,false,true,true,}),
-            new FunctionCode("STATUS_ON", new[] {true,true,false,true,true,}),
-            new FunctionCode("STATUS_OFF",  new[] {true,false,true,true,true,}),
-            new FunctionCode("STATUS_REQUEST",  new[] {true,true,true,true,true,}),
+            new FunctionCode("ALL_UNITS_OFF", 0B10000),
+            new FunctionCode("ALL_LIGHTS_ON", 0B11000),
+            new FunctionCode("ON", 0B10100),
+            new FunctionCode("OFF", 0B11100),
+            new FunctionCode("DIM", 0B10010),
+            new FunctionCode("BRIGHT", 0B11010),
+            new FunctionCode("ALL_LIGHTS_OFF", 0B10110),
+            new FunctionCode("EXTENDED_CODE", 0B11110),
+            new FunctionCode("HAIL_REQUEST", 0B10001),
+            new FunctionCode("HAIL_ACKNOWLEDGE", 0B11001),
+            new FunctionCode("PRE_SET_DIM", 0B10101),
+            new FunctionCode("EXTENDED_DATA", 0B10011),
+            new FunctionCode("STATUS_ON", 0B11011),
+            new FunctionCode("STATUS_OFF", 0B10111),
+            new FunctionCode("STATUS_REQUEST", 0B11111),
         };
 
 
@@ -125,10 +127,10 @@ namespace X10Interface
             var serialPortName = SerialListBox.SelectedItem.ToString();
             var baudRate = int.Parse(BuadRateListBox.SelectedItem.ToString());
 
-            var bytesToSend = new[] { SelectedHouseCode.GetByte(), SelectedKeyCode.GetByte(), SelectedFunctionCode.GetByte() };
+            var bytesToSend = new[] { SelectedHouseCode.ByteCode, SelectedKeyCode.ByteCode, SelectedFunctionCode.ByteCode };
 
 
-            if (serialPortName != "None Connected")
+            if (serialPortName != NoSerialPortFound)
             {
                 var serialPort = new SerialPort(serialPortName, baudRate);
                 serialPort.Write(bytesToSend, 0, bytesToSend.Count());
