@@ -1,0 +1,15 @@
+C:\Users\jonas\source\repos\X10Interface\X10Interface\bin\Debug\X10Interface.exe.config
+C:\Users\jonas\source\repos\X10Interface\X10Interface\bin\Debug\X10Interface.exe
+C:\Users\jonas\source\repos\X10Interface\X10Interface\bin\Debug\X10Interface.pdb
+C:\Users\jonas\source\repos\X10Interface\X10Interface\obj\Debug\X10Interface.csprojAssemblyReference.cache
+C:\Users\jonas\source\repos\X10Interface\X10Interface\obj\Debug\MainWindow.g.cs
+C:\Users\jonas\source\repos\X10Interface\X10Interface\obj\Debug\App.g.cs
+C:\Users\jonas\source\repos\X10Interface\X10Interface\obj\Debug\X10Interface_MarkupCompile.cache
+C:\Users\jonas\source\repos\X10Interface\X10Interface\obj\Debug\X10Interface_MarkupCompile.lref
+C:\Users\jonas\source\repos\X10Interface\X10Interface\obj\Debug\MainWindow.baml
+C:\Users\jonas\source\repos\X10Interface\X10Interface\obj\Debug\X10Interface.g.resources
+C:\Users\jonas\source\repos\X10Interface\X10Interface\obj\Debug\X10Interface.Properties.Resources.resources
+C:\Users\jonas\source\repos\X10Interface\X10Interface\obj\Debug\X10Interface.csproj.GenerateResource.cache
+C:\Users\jonas\source\repos\X10Interface\X10Interface\obj\Debug\X10Interface.csproj.CoreCompileInputs.cache
+C:\Users\jonas\source\repos\X10Interface\X10Interface\obj\Debug\X10Interface.exe
+C:\Users\jonas\source\repos\X10Interface\X10Interface\obj\Debug\X10Interface.pdb
