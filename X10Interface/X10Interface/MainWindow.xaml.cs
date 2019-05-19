@@ -132,7 +132,12 @@ namespace X10Interface
 
             if (serialPortName != NoSerialPortFound)
             {
-                var serialPort = new SerialPort(serialPortName, baudRate);
+                var serialPort = new SerialPort(serialPortName, baudRate)
+                {
+                    // Set if needed.
+                    //Parity = Parity.None,
+                    //StopBits = StopBits.None,
+                };
                 serialPort.Write(bytesToSend, 0, bytesToSend.Count());
             }
         }
