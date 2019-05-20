@@ -110,7 +110,6 @@ void X10_Controller::transmit_code(X10_Code* code) {
   return;
 }
 
-
 void X10_Controller::receive_code() {
   this->set_state(RECEIVING);
   global_state = RECEIVING;
@@ -327,7 +326,7 @@ void TIMER2_init() {
 	SET_TIMER2_WAVEFORM;
 	SET_TIMER2_MASK;
 	TCNT2 = 0;
-	OCR2A = 27; // 16 MHz / (2 * prescaler (1) * desired_frequency) = 26.67
+	OCR2A = 7; // 16 MHz / (2 * prescaler (1) * desired_frequency) = 6.66667
 }
 
 void INT0_init() {
