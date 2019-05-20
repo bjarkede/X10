@@ -26,7 +26,7 @@ namespace X10Interface
         public List<string> SerialPorts { get; } = new List<string>(SerialPort.GetPortNames().Any() ? SerialPort.GetPortNames() : new[] { NoSerialPortFound });
         public List<int> BaudRates { get; } = new List<int>()
         {
-            110, 300, 600, 1200, 2400, 4800, 9600, 14400, 19200, 38400, 57600, 115200
+            300, 600, 1200, 2400, 4800, 9600, 14400, 19200, 38400, 57600, 115200
         };
 
         private HouseCode selectedHouseCode;

@@ -7,12 +7,11 @@ int main(int argc, char* argv[]) {
   // Init our X10 Controller for this device
   X10_Controller controller = X10_Controller();
   
-  /* @Completed Implementation.
   X10_Code *code = (X10_Code *)malloc(sizeof(X10_Code));
   code->construct_packet(HOUSE_A, KEY_2, ON);
   
   controller.transmit_code(code);
-  */
+
   /*Custom_deque d = Custom_deque(16);
 
   d.push_back(32);
@@ -37,9 +36,9 @@ int main(int argc, char* argv[]) {
   cout << d.equals(b) << endl;*/
 
   while(1) {
-    if(controller.idle()) { // @TODO: Test idle().
+    /*if(controller.idle()) { // @TODO: Test idle().
 		controller.receive_code();
-	}
+	}*/
   }
 
   return 0;

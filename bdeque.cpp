@@ -101,6 +101,12 @@ unsigned char Custom_deque::pop_front()
 {
   unsigned char value = data[_front];
   incrementIndex();
+
+  if(_front > _capacity) {
+	_front = 0;
+  } else {
+	_front++;
+  }
   _size--;
   return value;
 }

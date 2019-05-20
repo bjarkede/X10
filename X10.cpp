@@ -26,6 +26,7 @@ X10_Controller::X10_Controller() {
 	lpf_receive_buffer        = Custom_deque(64); // 56 bits for code, 4 bits stop code
 	compare_deque_unique_code = Custom_deque(4);
 	error_buffer              = Custom_deque(4);
+	encoded_packet            = Custom_deque(64);
 
 	// We need this to compare
 	compare_deque_unique_code.push_back(0x0);
@@ -47,12 +48,12 @@ void X10_Controller::set_state(state new_state) {
 	this->X10_state = new_state;
 }
 
-/*void X10_Code::construct_packet(char unsigned hc, char unsigned nc, char unsigned fc) {
-	packet = bdeque_alloc();
-	for(int i = 0; i < 2; ++i) {
-		bdeque_push_back(packet, hc);
-		bdeque_push_back(packet, nc);
-		bdeque_push_back(packet, fc);
+void X10_Code::construct_packet(char unsigned hc, char unsigned nc, char unsigned fc) {
+	packet = Custom_deque(6);
+	for(int i = 0; i < 2; i++) {
+		packet.push_back(hc);
+		packet.push_back(nc);
+		packet.push_back(fc);
 	}
 }
 
@@ -60,40 +61,30 @@ void X10_Controller::transmit_code(X10_Code* code) {
   this->set_state(SENDING);
   global_state = SENDING;
 
-  bool continous_flag = false;
   char unsigned current_bit;
 
-  // Push our start code to the encoded_packet.
-  bdeque_push_back(encoded_packet, 0x0);
-  bdeque_push_back(encoded_packet, 0x1);
-  bdeque_push_back(encoded_packet, 0x1);
-  bdeque_push_back(encoded_packet, 0x1);
+  // Push our unique_code to the encoded_packet.
+  encoded_packet.push_back(0x0);
+  encoded_packet.push_back(0x1);
+  encoded_packet.push_back(0x1);
+  encoded_packet.push_back(0x1);
  
   // Encode our X10_Scheme to manchester.
-  while(!bdeque_is_empty(code->packet)) {
-    if(!continous_flag && bdeque_size(code->packet) == 3) {
-      for(int i = 0; i < 6; ++i) {
-	bdeque_push_back(encoded_packet, 0x0);
-      }
+  while(!code->packet.is_empty()) {
+    for(int i = 0; i < amount_of_bits(code->packet.size()); i++) {
+      current_bit = (code->packet.peek_front() >> i) & 1;
+      encoded_packet.push_back(current_bit);
+      encoded_packet.push_back(current_bit^1);
     }
     
-    for(int i = amount_of_bits(bdeque_size(code->packet)); i >= 0 ; --i) {
-      if(bdeque_peek_front(code->packet) == BRIGHT || bdeque_peek_front(code->packet) == DIM) { continous_flag = true; }
-      
-      current_bit = (bdeque_peek_front(code->packet) >> i) & 0x1;
-      bdeque_push_back(encoded_packet, current_bit);
-      bdeque_push_back(encoded_packet, current_bit^1);
-    }
-    
-    bdeque_pop_front(code->packet); // Move onto next instruction
+    code->packet.pop_front(); // Move onto next instruction
   }
 
-  
-  // Add the STOP_CODE to our encoded_packet..
-  bdeque_push_back(encoded_packet, 0x1);
-  bdeque_push_back(encoded_packet, 0x1);
-  bdeque_push_back(encoded_packet, 0x1);
-  bdeque_push_back(encoded_packet, 0x0);
+  // Add the unique_code to our encoded_packet..
+  encoded_packet.push_back(0x0);
+  encoded_packet.push_back(0x1);
+  encoded_packet.push_back(0x1);
+  encoded_packet.push_back(0x1);
   
   // Start the external interrupt/TIMER0 now that we have parsed the bits.
   INT0_init();
@@ -105,7 +96,7 @@ void X10_Controller::transmit_code(X10_Code* code) {
   START_INT0_INTERRUPT;
   
   // Then wait until the global packet is empty...
-  while(!bdeque_is_empty(encoded_packet)) {
+  while(!encoded_packet.is_empty()) {
     // Do nothing.
   }
 
@@ -118,7 +109,7 @@ void X10_Controller::transmit_code(X10_Code* code) {
   this->set_state(IDLE);
   return;
 }
-*/
+
 
 void X10_Controller::receive_code() {
   this->set_state(RECEIVING);
@@ -235,9 +226,11 @@ void X10_Controller::decode_manchester_deque(Custom_deque &d) {
 
 ISR(INT0_vect) {
   char unsigned current_bit;	
+  
+  PORTB |= 0 << 1;
 		
-  /*if(!bdeque_is_empty(encoded_packet) && global_state == SENDING) {
-    current_bit = bdeque_peek_front(encoded_packet);
+  if(!encoded_packet.is_empty() && global_state == SENDING) {
+    current_bit = encoded_packet.peek_front();
 
     START_TIMER1; // This creates an interrupt after 1ms.
    
@@ -247,10 +240,10 @@ ISR(INT0_vect) {
     }
 	
 	if(current_bit == 0x0) {
+
 	}
    
-    // On the next interrupt, transmit the next bit, by removing this one.
-  }*/
+  }
 
 	/*
   if(!bdeque_is_empty(encoded_packet) && global_state == ERROR) {
@@ -297,7 +290,8 @@ ISR(TIMER1_COMPA_vect) {
   
   switch(global_state) {
 	case SENDING:
-		//bdeque_pop_front(encoded_packet);
+		encoded_packet.pop_front();
+		PORTB &= ~(1 << 1);
 	case IDLE:
 		// Do nothing.
 	case ERROR:
@@ -308,7 +302,7 @@ ISR(TIMER1_COMPA_vect) {
 }
 
 ISR(TIMER0_COMPA_vect) {
-  //PORTB ^= 1 << 1;
+  PORTB ^= 1 << 1;
 }
 
 ISR(TIMER2_COMPA_vect) {
@@ -345,9 +339,9 @@ int amount_of_bits(int n) {
 	int result = 0;
 	
 	if(n == 6 || n == 3) {
-		result = 3;
-		} else {
 		result = 4;
+		} else {
+		result = 5;
 	}
 
 	return result;

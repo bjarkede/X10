@@ -26,10 +26,10 @@
 // X10 States
 enum state { IDLE = 0, SENDING = 1, RECEIVING = 2, ERROR = 3 };
 
-/*struct X10_Code {
-  bdeque_type *packet;  
+struct X10_Code {
+  Custom_deque packet;  
   void construct_packet(char unsigned hc, char unsigned nc, char unsigned fc);
-};*/
+};
 
 class X10_Controller {
 private:
@@ -42,7 +42,7 @@ protected:
 public:
   X10_Controller();
   
-  //void transmit_code(X10_Code* code);
+  void transmit_code(X10_Code* code);
   void receive_code();
   bool idle();
  
