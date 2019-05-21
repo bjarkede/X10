@@ -69,7 +69,7 @@ unsigned char Custom_deque::get_element_at(int index)
 {
   int newIndex = _front + index;
 
-  if (newIndex > _size)
+  if (index > _size)
     return -1;
 
   else if (newIndex > _capacity)
@@ -87,6 +87,8 @@ void Custom_deque::clear()
 	}
 	
 	_size = 0;
+	_index = 0;
+	_front = 0;
 }
 
 void Custom_deque::push_back(unsigned char item)
@@ -99,14 +101,13 @@ void Custom_deque::push_back(unsigned char item)
 
 unsigned char Custom_deque::pop_front()
 {
+  if(_index == _front)
+	return 255;
+  if(_size == 0)
+	return 255;
+		
   unsigned char value = data[_front];
   incrementIndex();
-
-  if(_front > _capacity) {
-	_front = 0;
-  } else {
-	_front++;
-  }
   _size--;
   return value;
 }
@@ -126,8 +127,12 @@ unsigned char Custom_deque::peek_front()
 void Custom_deque::incrementIndex()
 {
   _index++;
-  if (_index > _capacity)
+  if (_index >= _capacity)
     _index = 0;
+  if(_index	 == _front) 
+	_front++;
+  if(_front >= _capacity)
+	_front = 0;
 }
 
 void Custom_deque::decrementIndex()

@@ -1,4 +1,5 @@
-#pragma once
+#ifndef _X10_HPP_
+#define _x10_HPP_
 
 #include <avr/io.h>
 #include <avr/interrupt.h>
@@ -50,6 +51,10 @@ public:
   state get_state(X10_Controller* controller) const;
   void set_state(state new_state);
   void decode_manchester_deque(Custom_deque &d);
+  
+  char unsigned get_house_code() const;
+  char unsigned get_number_code() const;
+  char unsigned get_function_code() const;
 };
 
 void TIMER0_init();
@@ -58,3 +63,5 @@ void TIMER2_init();
 void INT0_init();
 
 int amount_of_bits(int n);
+
+#endif

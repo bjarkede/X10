@@ -1,9 +1,9 @@
 #include "X10.hpp"
 
-bool is_equal_lpf = false;
-bool is_equal_hpf = false;
+volatile bool is_equal_lpf = false;
+volatile bool is_equal_hpf = false;
 
-state global_state;
+volatile state global_state;
 
 Custom_deque lpf_buffer;
 Custom_deque lpf_receive_buffer;
@@ -44,6 +44,18 @@ state X10_Controller::get_state(X10_Controller* controller) const {
 	return this->X10_state;
 }
 
+char unsigned X10_Controller::get_house_code() const {
+	return this->_house_code;
+}
+
+char unsigned X10_Controller::get_number_code() const {
+	return this->_number_code;
+}
+
+char unsigned X10_Controller::get_function_code() const {
+	return this->_function_code;
+}
+
 void X10_Controller::set_state(state new_state) {
 	this->X10_state = new_state;
 }
@@ -72,7 +84,7 @@ void X10_Controller::transmit_code(X10_Code* code) {
   // Encode our X10_Scheme to manchester.
   while(!code->packet.is_empty()) {
     for(int i = 0; i < amount_of_bits(code->packet.size()); i++) {
-      current_bit = (code->packet.peek_front() >> i) & 1;
+      current_bit = (code->packet.peek_front() >> ((amount_of_bits(code->packet.size())-1)-i)) & 1;
       encoded_packet.push_back(current_bit);
       encoded_packet.push_back(current_bit^1);
     }
@@ -114,6 +126,8 @@ void X10_Controller::receive_code() {
   this->set_state(RECEIVING);
   global_state = RECEIVING;
   
+  lpf_receive_buffer.clear();
+  
   bool is_equal_stop = false;
   
   while(!is_equal_stop) {
@@ -127,7 +141,7 @@ void X10_Controller::receive_code() {
 		}
 	}
   }
-
+ 
   STOP_INT0_INTERRUPT;
   STOP_TIMER1;
   cli();
@@ -137,6 +151,8 @@ void X10_Controller::receive_code() {
   }
 
   decode_manchester_deque(lpf_receive_buffer);
+  
+  lpf_receive_buffer.clear();
   
   global_state = IDLE;
   this->set_state(IDLE);
@@ -156,8 +172,8 @@ bool X10_Controller::idle() {
 
   START_INT0_INTERRUPT;
 
-  while(!is_equal_lpf) {
-	// Do nothing.
+  if (!is_equal_lpf) {
+	return false;
   }
   
   lpf_buffer.clear();
@@ -179,10 +195,9 @@ void X10_Controller::decode_manchester_deque(Custom_deque &d) {
   char unsigned next_bit;
   
   const int house_code_offset = 3;
-  const int number_code_offset = 7;
-  const int function_code_offset = 11;
   
-  PORTB |= 1 << 3;
+  int k = 4;
+  int j = 4;
 
   for (int i = 0; i < 14; i++) {
   current_bit = d.get_element_at(i*2);
@@ -194,11 +209,14 @@ void X10_Controller::decode_manchester_deque(Custom_deque &d) {
 			if (i <= house_code_offset)	
 				_house_code |= (1 << (house_code_offset-i));
 				
-			if (i > house_code_offset && i < house_code_offset + number_code_offset)
-				_number_code |= (1 << (number_code_offset-(i-house_code_offset)));
-				
-			if (i > house_code_offset && i < function_code_offset)
-				_function_code |= (1 << (house_code_offset-(i- function_code_offset)));
+			if (i > house_code_offset && i < 9) {
+				_number_code |= (1 << k);
+				k--;
+			}
+			if (i > 8 && i < 14) {
+				_function_code |= (1 << j);
+				j--;
+			}
 		}
 	  }
 	  if (current_bit == 0x0)
@@ -208,24 +226,25 @@ void X10_Controller::decode_manchester_deque(Custom_deque &d) {
 			  if (i <= house_code_offset)
 			  _house_code |= (0 << (house_code_offset-i));
 			  
-			  if (i > house_code_offset && i < house_code_offset + number_code_offset)
-			  _number_code |= (0 << (number_code_offset-(i-house_code_offset)));
+			  if (i > house_code_offset && i < 9) {
+				_number_code |= (0 << k);
+				k--;
+			  }
 			  
-			  if (i > house_code_offset && i < function_code_offset)
-			  _function_code |= (0 << (house_code_offset-(i- function_code_offset)));
+			  if (i > 8 && i < 14) {
+			  _function_code |= (0 << j);
+				j--;
+			  }
 		  }
 	  }
   }
-  
-  if (_house_code == HOUSE_A)
-	PORTB |= 1 << 2;
   
  return;
 }
 
 ISR(INT0_vect) {
-  char unsigned current_bit;	
-  
+  volatile char unsigned current_bit;	
+
   PORTB |= 0 << 1;
 		
   if(!encoded_packet.is_empty() && global_state == SENDING) {
@@ -238,10 +257,10 @@ ISR(INT0_vect) {
 		START_TIMER0;
     }
 	
-	if(current_bit == 0x0) {
-
+	if(current_bit == 0x0) { 
+		// Do nothing. 
 	}
-   
+		
   }
 
 	/*
@@ -266,13 +285,11 @@ ISR(INT0_vect) {
 	if(lpf_buffer.size() == compare_deque_unique_code.size()) {
 		if(lpf_buffer.equals(compare_deque_unique_code)) {
 			is_equal_lpf = true;
-			global_state = RECEIVING;
 		}
 	}
-  }
-  else if(global_state == RECEIVING) {
-	if(PINA & (1 << 0)) { // If there is a 1 on this PIN, load 1 into LPF.
-		lpf_receive_buffer.push_back(0x1);
+  } else if(global_state == RECEIVING) {
+		if(PINA & (1 << 0)) { // If there is a 1 on this PIN, load 1 into LPF.
+			lpf_receive_buffer.push_back(0x1);
 		} else {
 			lpf_receive_buffer.push_back(0x0);
 	    }
