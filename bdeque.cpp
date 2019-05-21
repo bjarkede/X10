@@ -72,7 +72,7 @@ unsigned char Custom_deque::get_element_at(int index)
   if (index > _size)
     return -1;
 
-  else if (newIndex > _capacity)
+  else if (newIndex >= _capacity)
     newIndex = newIndex - _capacity;
 
   return data[newIndex];
