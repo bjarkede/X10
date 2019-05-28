@@ -1,7 +1,10 @@
 #include "X10.hpp"
 
-volatile bool is_equal_lpf = false;
-volatile bool is_equal_hpf = false;
+volatile bool is_equal_lpf  = false;
+volatile bool is_equal_hpf  = false;
+volatile bool is_equal_stop = false;
+volatile bool cleared_receive    = false;
+volatile bool cleared_idle       = false;
 
 volatile state global_state;
 
@@ -122,70 +125,80 @@ void X10_Controller::transmit_code(X10_Code* code) {
   return;
 }
 
-void X10_Controller::receive_code() {
-  this->set_state(RECEIVING);
-  global_state = RECEIVING;
+bool X10_Controller::receive_code() {
+  if(!cleared_receive) {
+	this->set_state(RECEIVING);
+	global_state = RECEIVING;
   
-  lpf_receive_buffer.clear();
-  
-  bool is_equal_stop = false;
-  
-  while(!is_equal_stop) {
-    if (lpf_receive_buffer.size() > 50) {
-		if(lpf_receive_buffer.compare_last_four(compare_deque_unique_code)) {
-			is_equal_stop = true;
-		}
-		if(lpf_receive_buffer.compare_last_four(error_buffer)) {
-			this->set_state(ERROR);
-			return;
-		}
-	}
+	lpf_receive_buffer.clear();
+	
+	cleared_receive = true;
   }
- 
-  STOP_INT0_INTERRUPT;
-  STOP_TIMER1;
-  cli();
   
+if (lpf_receive_buffer.size() > 56) {
+	if(lpf_receive_buffer.compare_last_four(compare_deque_unique_code)) {
+		is_equal_stop = true;
+	}
+	if(lpf_receive_buffer.compare_last_four(error_buffer)) {
+		this->set_state(ERROR);
+	}
+} 
+  if (!is_equal_stop) return false; 
+
   for(int i = 0; i < 4; i++) {
 	  lpf_receive_buffer.pop_back();
   }
-
+  
   decode_manchester_deque(lpf_receive_buffer);
   
   lpf_receive_buffer.clear();
   
+  cleared_receive = false;
+  is_equal_lpf = false;
+  
   global_state = IDLE;
   this->set_state(IDLE);
-  return;
+  return true;
 }
 
 bool X10_Controller::idle() {
-  this->set_state(IDLE);
-  global_state = IDLE;
-
   // Make sure that the buffers are empty.
-  lpf_buffer.clear();
+  if(!cleared_idle && !is_equal_lpf) {
+	this->set_state(IDLE);
+	global_state = IDLE;
 
-  INT0_init();
-  TIMER1_init();
-  sei();
+	lpf_buffer.clear();
 
-  START_INT0_INTERRUPT;
+	INT0_init();
+	TIMER1_init();
+	sei();
+
+	START_INT0_INTERRUPT;
+
+	cleared_idle = true;
+  }
 
   if (!is_equal_lpf) {
 	return false;
   }
   
   lpf_buffer.clear();
+  
+  cleared_idle = false;
     
   return true;
 }
 
 void X10_Controller::decode_manchester_deque(Custom_deque &d) {
+  /*for(int i = 0; i < d.size(); i++) {
+	  SendChar(d.get_element_at(i));
+  }	*/
+  //SendInteger(d.size());
   if(!d.is_symmetrical()) {
 	this->set_state(ERROR);
 	return;	  
   }
+  //SendInteger(2);
   
   _house_code    = 0x0;
   _number_code   = 0x0;
@@ -238,6 +251,10 @@ void X10_Controller::decode_manchester_deque(Custom_deque &d) {
 		  }
 	  }
   }
+  
+  SendChar(_house_code);
+  SendChar(_number_code);
+  SendChar(_function_code);
   
  return;
 }

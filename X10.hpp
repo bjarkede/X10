@@ -6,6 +6,7 @@
 
 #include "X10const.hpp"
 #include "bdeque.hpp"
+#include "uart_int.hpp"
 
 #define SET_TIMER0_WAVEFORM TCCR0A |= (1<<WGM01)
 #define SET_TIMER0_MASK TIMSK0 |= (1<<OCIE0A)
@@ -43,8 +44,8 @@ protected:
 public:
   X10_Controller();
   
-  void transmit_code(X10_Code* code);
-  void receive_code();
+  void transmit_code(X10_Code* code); // TODO: Eliminate need for loop.
+  bool receive_code();                // TODO: Eliminate need for loop.
   bool idle();
  
   // Garbage

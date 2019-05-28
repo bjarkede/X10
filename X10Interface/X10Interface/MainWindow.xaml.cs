@@ -115,10 +115,10 @@ namespace X10Interface
             new FunctionCode("HAIL_REQUEST", 0B10001),
             new FunctionCode("HAIL_ACKNOWLEDGE", 0B11001),
             new FunctionCode("PRE_SET_DIM", 0B10101),
-            new FunctionCode("EXTENDED_DATA", 0B10011),
-            new FunctionCode("STATUS_ON", 0B11011),
-            new FunctionCode("STATUS_OFF", 0B10111),
-            new FunctionCode("STATUS_REQUEST", 0B11111),
+            new FunctionCode("TIME_OFF", 0B10011),
+            new FunctionCode("TIME_1", 0B11011),
+            new FunctionCode("TIME_2", 0B10111),
+            new FunctionCode("TIME_3", 0B11111),
         };
 
 

@@ -36,14 +36,14 @@ int main(int argc, char* argv[]) {
 			
 			code->packet.clear(); // Clear this so we can construct the next code.
 			UART_buffer.clear();  // Clear this so we can load new X10_Code from interface.
+			
 		}
 		
 		// Check if our controller have received the start_code, if it has receive_code().
 		if(controller.idle()) {
-			PORTB |= 1 << 2;
 			controller.receive_code();
 			if(controller.get_house_code() == HOUSE && controller.get_number_code() == UNIT) {
-				if(controller.get_function_code() == COFFEE_DONE) 
+				if(controller.get_function_code() == COFFEE_DONE)
 				{
 				}
 			}
@@ -66,5 +66,5 @@ ISR(INT1_vect)
 
 ISR(USART0_RX_vect) {
 	unsigned char rx_value = UDR0;
-	UART_buffer.push_back(rx_value);	
+	UART_buffer.push_back(rx_value);
 }

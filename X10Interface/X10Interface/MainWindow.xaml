@@ -43,13 +43,12 @@
             <Label HorizontalAlignment="Center">SerialPort</Label>    
             <ComboBox x:Name="SerialListBox" ItemsSource="{Binding SerialPorts}" AllowDrop="True" IsSynchronizedWithCurrentItem="True" SelectedIndex="0"></ComboBox>
         </StackPanel>
-        
+
         <StackPanel Margin="10 0 10 10" Grid.Row="1" Grid.Column="1" >
             <Label HorizontalAlignment="Center">BaudRate</Label>
             <ComboBox x:Name="BuadRateListBox" ItemsSource="{Binding BaudRates}" AllowDrop="True" IsSynchronizedWithCurrentItem="True" SelectedIndex="0"></ComboBox>
         </StackPanel>
-        
-        
+
         <DataGrid SelectedItem="{Binding SelectedHouseCode}" RowStyle="{Binding Source={StaticResource DatagridRowStyle}}" CellStyle="{Binding Source={StaticResource DatagridCellStyle}}" AutoGenerateColumns="False" Grid.Row="2" Grid.Column="0" x:Name="HouseCode" ItemsSource="{Binding DataContext.HouseCodes}">
             <DataGrid.Columns>
                 <DataGridTextColumn Header="HouseCode" Binding="{Binding Path=Name}" Width="*"/>
